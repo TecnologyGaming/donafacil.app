@@ -14,18 +14,28 @@ export default function UserDashboard() {
   const [newMethodDetails, setNewMethodDetails] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadData = () => {
-    // For demonstration, let's load campaigns of "Laura Martínez" (Sofia's campaign), or any campaign created by the current user.
-    // If we have campaigns, let's grab the ones where organizer email matches laura@example.com OR any campaign with id > 4 (newly created ones).
-    const all = mockDb.getCampaigns();
-    const userCamp = all.filter(c => c.organizer.email === "laura@example.com" || parseInt(c.id) > 4);
-    setCampaigns(userCamp);
-    if (userCamp.length > 0 && !selectedCampaign) {
-      setSelectedCampaign(userCamp[0]);
-    } else if (userCamp.length > 0) {
-      // Keep selected sync
-      const updatedSelect = userCamp.find(c => c.id === selectedCampaign.id);
-      setSelectedCampaign(updatedSelect || userCamp[0]);
+  const loadData = async () => {
+    try {
+      const all = await mockDb.getCampaigns();
+      const userCamp = all.filter(c => c.organizer.email === "laura@example.com" || parseInt(c.id) > 4 || isNaN(parseInt(c.id)));
+      
+      // Let's also fetch donations for each campaign to make sure we combine them!
+      const userCampWithDonations = [];
+      for (const uc of userCamp) {
+        const donations = await mockDb.getCampaignDonations(uc.id);
+        userCampWithDonations.push({ ...uc, donations });
+      }
+
+      setCampaigns(userCampWithDonations);
+      if (userCampWithDonations.length > 0 && !selectedCampaign) {
+        setSelectedCampaign(userCampWithDonations[0]);
+      } else if (userCampWithDonations.length > 0) {
+        // Keep selected sync
+        const updatedSelect = userCampWithDonations.find(c => c.id === selectedCampaign.id);
+        setSelectedCampaign(updatedSelect || userCampWithDonations[0]);
+      }
+    } catch (e) {
+      console.error("Error loading user dashboard:", e);
     }
   };
 
@@ -39,16 +49,20 @@ export default function UserDashboard() {
     return () => window.removeEventListener("df_role_changed", handleRoleChange);
   }, []);
 
-  const handleToggleActive = (id) => {
-    mockDb.toggleCampaignActive(id);
-    loadData();
-    toast({
-      title: "Estado Actualizado",
-      description: "Has cambiado la visibilidad de tu campaña.",
-    });
+  const handleToggleActive = async (id) => {
+    try {
+      await mockDb.toggleCampaignActive(id);
+      await loadData();
+      toast({
+        title: "Estado Actualizado",
+        description: "Has cambiado la visibilidad de tu campaña.",
+      });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleAddPayment = (e) => {
+  const handleAddPayment = async (e) => {
     e.preventDefault();
     if (!newMethodDetails.trim()) {
       toast({
@@ -60,19 +74,27 @@ export default function UserDashboard() {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      mockDb.addCustomPaymentMethod(selectedCampaign.id, {
+    try {
+      await mockDb.addCustomPaymentMethod(selectedCampaign.id, {
         name: newMethodName,
         details: newMethodDetails.trim()
       });
       setNewMethodDetails("");
       setIsSubmitting(false);
-      loadData();
+      await loadData();
       toast({
         title: "¡Método de Pago Agregado!",
         description: "Tu canal de cobro ha sido enviado para verificación del Administrador.",
       });
-    }, 1000);
+    } catch (err) {
+      console.error(err);
+      setIsSubmitting(false);
+      toast({
+        title: "Error al agregar",
+        description: "No se pudo registrar el canal de cobro.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (campaigns.length === 0) {

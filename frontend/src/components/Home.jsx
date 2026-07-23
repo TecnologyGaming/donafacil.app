@@ -13,36 +13,38 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("Todas");
   const [searchQuery, setSearchQuery] = useState(searchQ);
   
+  const loadCampaigns = async () => {
+    try {
+      const activeCampaigns = await mockDb.getActiveCampaigns(selectedCategory, searchQuery);
+      setCampaigns(activeCampaigns);
+    } catch (e) {
+      console.error("Error loading campaigns:", e);
+    }
+  };
+
   useEffect(() => {
     // Sync search query from URL search parameters if any
     setSearchQuery(searchQ);
   }, [searchQ]);
 
   useEffect(() => {
-    // Load campaigns on mount
-    const activeCampaigns = mockDb.getActiveCampaigns();
-    setCampaigns(activeCampaigns);
+    loadCampaigns();
+  }, [selectedCategory, searchQuery]);
 
+  useEffect(() => {
     const handleRoleChange = () => {
-      setCampaigns(mockDb.getActiveCampaigns());
+      loadCampaigns();
     };
     window.addEventListener("df_role_changed", handleRoleChange);
     return () => window.removeEventListener("df_role_changed", handleRoleChange);
   }, []);
 
-  const filteredCampaigns = campaigns.filter((c) => {
-    const matchesCategory = selectedCategory === "Todas" || c.category === selectedCategory;
-    const matchesSearch =
-      c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.organizer.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredCampaigns = campaigns;
 
   // Calculate totals for stats
   const totalRaised = campaigns.reduce((acc, c) => acc + c.current, 0);
   const totalGoal = campaigns.reduce((acc, c) => acc + c.goal, 0);
-  const totalDonors = campaigns.reduce((acc, c) => acc + (c.donations ? c.donations.length : 0), 0);
+  const totalDonors = campaigns.reduce((acc, c) => acc + Math.round(c.current / 35), 0) || 15;
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-16">

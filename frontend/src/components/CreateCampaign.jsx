@@ -31,6 +31,7 @@ export default function CreateCampaign() {
   // Photos management - enforce maximum of 3
   const [images, setImages] = useState([]);
   const [customImageUrl, setCustomImageUrl] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Custom payment methods management
   const [paymentMethods, setPaymentMethods] = useState([
@@ -128,18 +129,30 @@ export default function CreateCampaign() {
       customPaymentMethods: paymentMethods.filter(p => p.details.trim() !== "")
     };
 
-    const newCampaign = mockDb.createCampaign(campaignData);
-    
-    // Set organizer role in session so they can see it in dashboard
-    localStorage.setItem("df_user_role", "organizer");
-    window.dispatchEvent(new Event("df_role_changed"));
+    setIsSubmitting(true);
+    mockDb.createCampaign(campaignData)
+      .then((newCampaign) => {
+        setIsSubmitting(false);
+        // Set organizer role in session so they can see it in dashboard
+        localStorage.setItem("df_user_role", "organizer");
+        window.dispatchEvent(new Event("df_role_changed"));
 
-    toast({
-      title: "¡Campaña Creada con Éxito!",
-      description: "Tu campaña ha sido publicada. Los métodos de pago personalizados están pendientes de aprobación del administrador.",
-    });
+        toast({
+          title: "¡Campaña Creada con Éxito!",
+          description: "Tu campaña ha sido publicada. Los métodos de pago personalizados están pendientes de aprobación del administrador.",
+        });
 
-    navigate(`/campaigns/${newCampaign.id}`);
+        navigate(`/campaigns/${newCampaign.id}`);
+      })
+      .catch((err) => {
+        console.error(err);
+        setIsSubmitting(false);
+        toast({
+          title: "Error al crear",
+          description: "No se pudo registrar la campaña en el servidor.",
+          variant: "destructive"
+        });
+      });
   };
 
   return (

@@ -26,9 +26,18 @@ export default function CampaignDetail() {
   const [manualName, setManualName] = useState("");
   const [manualReference, setManualReference] = useState("");
 
-  const refreshCampaign = () => {
-    const c = mockDb.getCampaignById(id);
-    setCampaign(c);
+  const refreshCampaign = async () => {
+    try {
+      const c = await mockDb.getCampaignById(id);
+      if (c) {
+        const donations = await mockDb.getCampaignDonations(id);
+        setCampaign({ ...c, donations });
+      } else {
+        setCampaign(null);
+      }
+    } catch (e) {
+      console.error("Error refreshing campaign:", e);
+    }
   };
 
   useEffect(() => {
@@ -59,7 +68,7 @@ export default function CampaignDetail() {
   const approvedCustomMethods = campaign.customPaymentMethods?.filter(m => m.approved) || [];
 
   // Handle Stripe Mock Payment
-  const handleStripeDonate = (e) => {
+  const handleStripeDonate = async (e) => {
     e.preventDefault();
     if (!donationAmount || parseFloat(donationAmount) <= 0) {
       toast({
@@ -81,12 +90,12 @@ export default function CampaignDetail() {
 
     setIsSubmitting(true);
 
-    // Simulate payment processing
-    setTimeout(() => {
-      mockDb.addDonation(campaign.id, {
+    try {
+      await mockDb.addDonation(campaign.id, {
         name: donorName.trim() || "Donante Anónimo",
         amount: parseFloat(donationAmount),
-        comment: donorComment.trim()
+        comment: donorComment.trim(),
+        paymentMethod: "Tarjeta de Crédito (Stripe)"
       });
       
       setIsSubmitting(false);
@@ -96,17 +105,25 @@ export default function CampaignDetail() {
       setCardNumber("");
       setCardExpiry("");
       setCardCvc("");
-      refreshCampaign();
+      await refreshCampaign();
 
       toast({
         title: "¡Donación Recibida!",
         description: `Muchas gracias por tu donativo de ${parseFloat(donationAmount).toLocaleString("es-ES")} € con tarjeta.`,
       });
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      setIsSubmitting(false);
+      toast({
+        title: "Error de pago",
+        description: "Hubo un problema procesando tu donación simulada.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Handle reporting custom payment
-  const handleManualReport = (e) => {
+  const handleManualReport = async (e) => {
     e.preventDefault();
     if (!manualAmount || parseFloat(manualAmount) <= 0) {
       toast({
@@ -119,12 +136,13 @@ export default function CampaignDetail() {
 
     setIsSubmitting(true);
 
-    // Manual report instantly simulates a pending donation approval, or directly adds it with a note
-    setTimeout(() => {
-      mockDb.addDonation(campaign.id, {
+    try {
+      await mockDb.addDonation(campaign.id, {
         name: manualName.trim() || "Donante Anónimo",
         amount: parseFloat(manualAmount),
-        comment: `[Donado vía ${selectedMethod.name}] - Ref: ${manualReference || "N/A"}. ${donorComment.trim()}`
+        comment: `[Donado vía ${selectedMethod.name}] - Ref: ${manualReference || "N/A"}. ${donorComment.trim()}`,
+        paymentMethod: selectedMethod.name,
+        reference: manualReference
       });
 
       setIsSubmitting(false);
@@ -133,13 +151,21 @@ export default function CampaignDetail() {
       setManualAmount("20");
       setManualReference("");
       setDonorComment("");
-      refreshCampaign();
+      await refreshCampaign();
 
       toast({
         title: "¡Reporte de Donación Registrado!",
         description: `Registramos tu aporte manual de ${parseFloat(manualAmount).toLocaleString("es-ES")} € vía ${selectedMethod.name}.`,
       });
-    }, 1200);
+    } catch (err) {
+      console.error(err);
+      setIsSubmitting(false);
+      toast({
+        title: "Error al registrar",
+        description: "No se pudo registrar tu reporte de transferencia.",
+        variant: "destructive"
+      });
+    }
   };
 
   const shareCampaign = () => {
@@ -357,23 +383,64 @@ export default function CampaignDetail() {
 
               {/* Action Buttons */}
               <div className="space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 text-center">
+                  Opciones de Pago Disponibles
+                </p>
+
+                {/* 1. Zelle (Primary if approved) */}
+                {approvedCustomMethods.find(m => m.name.toLowerCase() === "zelle") ? (
+                  <button
+                    onClick={() => {
+                      setSelectedMethod(approvedCustomMethods.find(m => m.name.toLowerCase() === "zelle"));
+                      setShowManualReportModal(true);
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-base py-3 rounded-xl shadow transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
+                    Donar con Zelle (Paso 1)
+                  </button>
+                ) : (
+                  <div className="text-xs text-center text-slate-400 py-1 bg-slate-50 border rounded-lg border-dashed">
+                    Zelle no disponible/aprobado
+                  </div>
+                )}
+
+                {/* 2. Pago Móvil (Secondary if approved) */}
+                {approvedCustomMethods.find(m => m.name.toLowerCase().includes("movil") || m.name.toLowerCase().includes("móvil")) ? (
+                  <button
+                    onClick={() => {
+                      setSelectedMethod(approvedCustomMethods.find(m => m.name.toLowerCase().includes("movil") || m.name.toLowerCase().includes("móvil")));
+                      setShowManualReportModal(true);
+                    }}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black text-base py-3 rounded-xl shadow transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
+                    Donar con Pago Móvil (Paso 2)
+                  </button>
+                ) : (
+                  <div className="text-xs text-center text-slate-400 py-1 bg-slate-50 border rounded-lg border-dashed">
+                    Pago Móvil no disponible/aprobado
+                  </div>
+                )}
+
+                {/* 3. Tarjeta de Crédito (Third) */}
                 {campaign.stripeEnabled ? (
                   <button
                     onClick={() => setShowDonateModal(true)}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-4 rounded-full shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base py-3 rounded-xl shadow transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
                   >
-                    <Heart className="h-5 w-5 fill-current" />
-                    Donar Ahora (Tarjeta)
+                    <CreditCard className="h-4 w-4" />
+                    Tarjeta de Crédito (Stripe - Tercero)
                   </button>
                 ) : (
-                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-3.5 text-center text-sm text-amber-800">
-                    La pasarela de pago con tarjeta está desactivada temporalmente para esta campaña. Por favor, usa un método personalizado.
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-2.5 text-center text-xs text-amber-800">
+                    Tarjeta de Crédito desactivada por admin
                   </div>
                 )}
 
                 <button
                   onClick={shareCampaign}
-                  className="w-full border border-slate-200 hover:border-slate-300 bg-white text-gray-700 font-bold py-3.5 rounded-full transition-all flex items-center justify-center gap-2"
+                  className="w-full border border-slate-200 hover:border-slate-300 bg-white text-gray-700 font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm mt-3"
                 >
                   <Share2 className="h-4 w-4" />
                   Compartir Campaña

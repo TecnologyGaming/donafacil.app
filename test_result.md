@@ -101,3 +101,119 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Crear un clon de GoFundMe en español con limitación de 3 fotos por donativo, panel admin, aprobación de métodos de pago (destacando Zelle y Pago Móvil como principales, tarjeta Stripe como tercero), y base de datos persistente."
+backend:
+  - task: "API root check"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Base hello check route /api/ is working."
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: GET /api/ returns 200 with correct message. Fixed CORS middleware issue (removed unsupported allow_origins_regex parameter)."
+  - task: "Campaign management CRUD"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Supports fetching, creating (max 3 images limit enforced), and editing campaigns."
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: All campaign endpoints working correctly. GET /api/campaigns returns only active campaigns. GET /api/campaigns/{id} retrieves single campaign. POST /api/campaigns correctly enforces 3 photo limit (returns 400 for >3 photos). Category and search filters working. Fixed typo in line 485 (status_code 4404 → 404)."
+  - task: "Donation submissions and list"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Allows submitting donations with payment method types (Zelle, Pago Móvil, Stripe)."
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: POST /api/campaigns/{id}/donations successfully creates donations and correctly increments campaign current amount. All donation fields properly stored."
+  - task: "Admin Toggle & Custom payment approval"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Allows admin to toggle active status, toggle Stripe, and approve custom payment methods."
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: All admin endpoints working correctly. PATCH /api/admin/campaigns/{id}/toggle-active toggles campaign visibility. PATCH /api/admin/campaigns/{id}/toggle-stripe toggles Stripe payment option. POST /api/admin/campaigns/{id}/approve-payment/{method_id} approves/rejects custom payment methods. GET /api/admin/stats returns correct statistics. GET /api/admin/donations returns all donations."
+
+frontend:
+  - task: "GoFundMe landing page"
+    implemented: true
+    working: true
+    file: "frontend/src/components/Home.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Rendered correctly with statistics, filters, search and grid."
+  - task: "Campaign Detail layout & options order"
+    implemented: true
+    working: true
+    file: "frontend/src/components/CampaignDetail.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Shows carousel, description, recent donations, and options in order: 1. Zelle, 2. Pago Móvil, 3. Card (Stripe)."
+  - task: "Create Campaign Form with 3 photos limit"
+    implemented: true
+    working: true
+    file: "frontend/src/components/CreateCampaign.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Step-by-step form enforcing max 3 photos."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 2
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "API root check"
+    - "Campaign management CRUD"
+    - "Donation submissions and list"
+    - "Admin Toggle & Custom payment approval"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Fully implemented the backend with seeding and campaign CRUD. Ready for deep testing of the API routes."
+  - agent: "testing"
+    message: "Backend testing complete. All 13 tests passed successfully. Fixed 2 minor issues: (1) Removed unsupported 'allow_origins_regex' parameter from CORS middleware that was causing 500 errors, (2) Fixed typo in error status code (4404 → 404) in payment approval endpoint. All API endpoints are working correctly including root, campaigns CRUD, donations, admin toggles, payment approvals, and stats."

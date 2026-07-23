@@ -8,8 +8,13 @@ export default function AdminPanel() {
   const [campaigns, setCampaigns] = useState([]);
   const [activeTab, setActiveTab] = useState("campanas");
 
-  const loadData = () => {
-    setCampaigns(mockDb.getCampaigns());
+  const loadData = async () => {
+    try {
+      const data = await mockDb.getCampaigns();
+      setCampaigns(data);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   useEffect(() => {
@@ -23,31 +28,47 @@ export default function AdminPanel() {
   }, []);
 
   // Actions
-  const handleToggleActive = (id, title) => {
-    const updated = mockDb.toggleCampaignActive(id);
-    loadData();
-    toast({
-      title: updated.isActive ? "Campaña Activada" : "Campaña Suspendida",
-      description: `Se cambió el estado de: "${title}"`,
-    });
+  const handleToggleActive = async (id, title) => {
+    try {
+      const updated = await mockDb.toggleCampaignActive(id);
+      await loadData();
+      if (updated) {
+        toast({
+          title: updated.isActive ? "Campaña Activada" : "Campaña Suspendida",
+          description: `Se cambió el estado de: "${title}"`,
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleToggleStripe = (id, title) => {
-    const updated = mockDb.toggleStripeEnabled(id);
-    loadData();
-    toast({
-      title: updated.stripeEnabled ? "Stripe Habilitado" : "Stripe Deshabilitado",
-      description: `Pasarela Stripe para "${title}" ahora está ${updated.stripeEnabled ? "ENCENDIDA" : "APAGADA"}.`,
-    });
+  const handleToggleStripe = async (id, title) => {
+    try {
+      const updated = await mockDb.toggleStripeEnabled(id);
+      await loadData();
+      if (updated) {
+        toast({
+          title: updated.stripeEnabled ? "Stripe Habilitado" : "Stripe Deshabilitado",
+          description: `Pasarela Stripe para "${title}" ahora está ${updated.stripeEnabled ? "ENCENDIDA" : "APAGADA"}.`,
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleApprovePayment = (campaignId, methodId, methodName, approved) => {
-    mockDb.approveCustomPaymentMethod(campaignId, methodId, approved);
-    loadData();
-    toast({
-      title: approved ? "Método Aprobado" : "Método Rechazado/Inhabilitado",
-      description: `El canal "${methodName}" ha sido actualizado con éxito.`,
-    });
+  const handleApprovePayment = async (campaignId, methodId, methodName, approved) => {
+    try {
+      await mockDb.approveCustomPaymentMethod(campaignId, methodId, approved);
+      await loadData();
+      toast({
+        title: approved ? "Método Aprobado" : "Método Rechazado/Inhabilitado",
+        description: `El canal "${methodName}" ha sido actualizado con éxito.`,
+      });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   // Stats calculation
