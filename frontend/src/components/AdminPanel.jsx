@@ -9,6 +9,36 @@ export default function AdminPanel() {
   const [campaigns, setCampaigns] = useState([]);
   const [activeTab, setActiveTab] = useState("campanas");
 
+  // Admin Login States
+  const [isAdminLogged, setIsAdminLogged] = useState(localStorage.getItem("df_admin_logged") === "true");
+  const [loginUser, setLoginUser] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    if (loginUser === "DONATEX" && loginPass === "Venezuela257#") {
+      localStorage.setItem("df_admin_logged", "true");
+      setIsAdminLogged(true);
+      setLoginError("");
+      toast({
+        title: "Sesión Iniciada",
+        description: "Bienvenido de vuelta, Administrador.",
+      });
+    } else {
+      setLoginError("Usuario o clave incorrecta. Inténtalo de nuevo.");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("df_admin_logged");
+    setIsAdminLogged(false);
+    toast({
+      title: "Sesión Cerrada",
+      description: "Has salido del panel de administración.",
+    });
+  };
+
   const loadData = async () => {
     try {
       const data = await mockDb.getCampaigns();
@@ -104,6 +134,62 @@ export default function AdminPanel() {
   // Sort donations by date desc
   allDonations.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  if (!isAdminLogged) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 py-20 text-left">
+        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+              <Shield className="h-6 w-6" />
+            </div>
+            <h2 className="text-2xl font-black text-gray-900">Acceso Administrativo</h2>
+            <p className="text-xs text-gray-400">Ingresa las credenciales del portal para continuar</p>
+          </div>
+
+          {loginError && (
+            <div className="bg-rose-50 border border-rose-100 rounded-xl p-3.5 text-xs text-rose-700 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+              <span>{loginError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Usuario</label>
+              <input
+                type="text"
+                required
+                placeholder="DONATEX"
+                value={loginUser}
+                onChange={(e) => setLoginUser(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Contraseña</label>
+              <input
+                type="password"
+                required
+                placeholder="Venezuela257#"
+                value={loginPass}
+                onChange={(e) => setLoginPass(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/50"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md mt-2 flex items-center justify-center gap-2"
+            >
+              Iniciar Sesión
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20 pt-8 text-left">
       <div className="container mx-auto px-4 sm:px-6">
@@ -119,12 +205,21 @@ export default function AdminPanel() {
             <p className="text-slate-400 text-sm">Gestiona solicitudes, habilita el Stripe global y aprueba métodos manuales de pago.</p>
           </div>
           
-          <div className="flex items-center gap-2 bg-emerald-600/20 border border-emerald-500/30 p-4 rounded-xl shrink-0 z-10 text-emerald-400">
-            <TrendingUp className="h-5 w-5" />
-            <div className="text-left">
-              <p className="text-xs uppercase font-extrabold text-emerald-300">Donaciones Totales</p>
-              <p className="text-xl font-black">{totalRaised.toLocaleString("es-ES")} €</p>
+          <div className="flex flex-col sm:flex-row items-center gap-4 z-10">
+            <div className="flex items-center gap-2 bg-emerald-600/20 border border-emerald-500/30 p-4 rounded-xl text-emerald-400">
+              <TrendingUp className="h-5 w-5" />
+              <div className="text-left">
+                <p className="text-xs uppercase font-extrabold text-emerald-300">Donaciones Totales</p>
+                <p className="text-xl font-black">{totalRaised.toLocaleString("es-ES")} €</p>
+              </div>
             </div>
+
+            <button
+              onClick={handleLogout}
+              className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-3 px-4 rounded-xl border border-slate-700 hover:border-slate-600 transition-all text-center shrink-0"
+            >
+              Cerrar Sesión
+            </button>
           </div>
 
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -z-0"></div>
