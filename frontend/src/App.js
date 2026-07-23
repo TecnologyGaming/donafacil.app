@@ -25,12 +25,18 @@ function App() {
         </main>
 
         {/* Footer */}
-        <footer className="border-t bg-white py-8 text-center text-sm text-slate-500 mt-auto">
-          <div className="container mx-auto px-4 space-y-3">
-            <p className="font-semibold text-emerald-700">donafacil.app</p>
-            <p className="max-w-md mx-auto text-xs text-slate-400">
-              Copia pixel-perfect de GoFundMe en español. Diseñado para recaudar de forma transparente con Stripe y transferencias verificadas. Todo el contenido es simulado para demostración técnica.
+        <footer className="border-t bg-white py-10 text-center text-sm text-slate-500 mt-auto">
+          <div className="container mx-auto px-4 max-w-2xl space-y-4">
+            <p className="font-extrabold text-lg text-emerald-700">donafacil.app</p>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              La plataforma de recaudación de fondos y solidaridad para la comunidad hispana. Recauda de manera directa, transparente y segura con tarjeta de crédito (Stripe) y transferencias verificadas.
             </p>
+            <div className="bg-slate-50 border p-4 rounded-xl text-[11px] text-slate-400 text-left space-y-1.5 leading-relaxed">
+              <p className="font-bold uppercase text-slate-500">Términos y Condiciones (Resumen de Seguridad):</p>
+              <p>
+                donafacil.app se reserva el derecho exclusivo de realizar **bloqueos preventivos de cuentas y fondos** de manera inmediata en caso de detectar anomalías, sospechas de fraude o denuncias de la comunidad. Asimismo, todos los métodos de pago y cobro registrados (como Zelle, Pago Móvil o Cuentas Bancarias) están sujetos a un **proceso estricto de auditoría y aprobación manual** por parte de la administración del portal antes de ser mostrados públicamente a los donantes para resguardar la seguridad del ecosistema.
+              </p>
+            </div>
             <p className="text-[11px] text-slate-300">© 2025 donafacil.app. Todos los derechos reservados.</p>
           </div>
         </footer>
