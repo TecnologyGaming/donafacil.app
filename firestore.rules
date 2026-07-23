@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // === REGLAS PARA LA COLECCIÓN DE CAMPAÑAS ===
+    match /campaigns/{campaignId} {
+      // Lectura: Cualquier usuario puede buscar y leer las campañas para donar
+      allow read: if true;
+
+      // Creación: Cualquier usuario puede iniciar una recaudación de fondos
+      allow create: if 
+        // 1. Debe incluir título, descripción y meta válida
+        request.resource.data.title is string && request.resource.data.title.size() > 0 &&
+        request.resource.data.goal is number && request.resource.data.goal >= 100 &&
+        // 2. Control estricto de máximo 3 fotos (Requisito de donafacil.app)
+        request.resource.data.images is list && request.resource.data.images.size() <= 3 &&
+        // 3. El saldo inicial debe arrancar en cero por seguridad
+        request.resource.data.current == 0.0 &&
+        // 4. Debe tener datos de organizador válidos (incluyendo teléfono celular privado)
+        request.resource.data.organizer.name is string &&
+        request.resource.data.organizer.email is string &&
+        request.resource.data.organizer.phone is string;
+
+      // Actualización: 
+      allow update: if 
+        // A. Permitir la suma de aportes (incrementar 'current' al donar)
+        (request.resource.data.current == resource.data.current + request.resource.data.current - resource.data.current) ||
+        // B. El administrador o el creador de la campaña modificando datos
+        (request.resource.data.organizer.email == resource.data.organizer.email);
+
+      // Eliminación: No se permite eliminar campañas para mantener transparencia histórica
+      allow delete: if false;
+    }
+
+    // === REGLAS PARA LA COLECCIÓN DE DONACIONES ===
+    match /donations/{donationId} {
+      // Lectura: Público para mostrar el listado de aportes y mensajes de aliento
+      allow read: if true;
+
+      // Creación: Cualquier donante puede registrar un aporte
+      allow create: if
+        // 1. El monto debe ser mayor a cero euros
+        request.resource.data.amount is number && request.resource.data.amount > 0 &&
+        // 2. Debe ir asociado a una campaña existente
+        request.resource.data.campaignId is string &&
+        // 3. Método de pago registrado
+        request.resource.data.paymentMethod is string;
+
+      // Las donaciones son inmutables por seguridad y transparencia financiera (No se editan ni eliminan)
+      allow update, delete: if false;
+    }
+  }
+}
