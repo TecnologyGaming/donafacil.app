@@ -225,7 +225,7 @@ export default function AdminPanel() {
                       <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="p-4">
                           <div className="font-bold text-gray-900 max-w-xs truncate">{c.title}</div>
-                          <div className="text-xs text-gray-400">{c.organizer.name} • {c.organizer.email}</div>
+                          <div className="text-xs text-gray-400">{c.organizer.name} • {c.organizer.email} {c.organizer.phone && `• Cel: ${c.organizer.phone}`}</div>
                         </td>
                         <td className="p-4">
                           <span className="bg-emerald-50 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-md">

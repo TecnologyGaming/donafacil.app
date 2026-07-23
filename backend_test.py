@@ -426,9 +426,68 @@ def test_admin_donations():
         record_test("Admin donations list", False, critical=True)
         return False
 
+def test_organizer_phone_field():
+    """Test POST /api/campaigns with organizerPhone field"""
+    print_section("8. Testing Organizer Phone Field")
+    
+    # Test campaign creation with organizerPhone
+    payload_with_phone = {
+        "title": "Campaña Test - Verificación de Teléfono",
+        "category": "Educación",
+        "goal": 3000.0,
+        "description": "Campaña de prueba para verificar que el campo organizerPhone se guarda correctamente como phone en el sub-objeto organizer.",
+        "images": [
+            "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800"
+        ],
+        "organizerName": "Carlos Rodríguez",
+        "organizerEmail": "carlos.rodriguez@example.com",
+        "organizerPhone": "+58-414-1234567",
+        "customPaymentMethods": []
+    }
+    
+    try:
+        response = requests.post(f"{BASE_URL}/campaigns", json=payload_with_phone, timeout=10)
+        passed = response.status_code == 200
+        
+        if passed:
+            campaign = response.json()
+            # Verify organizer sub-object has phone field
+            organizer = campaign.get("organizer", {})
+            has_phone = "phone" in organizer
+            phone_value = organizer.get("phone")
+            phone_matches = phone_value == payload_with_phone["organizerPhone"]
+            
+            checks = [
+                has_phone,
+                phone_matches,
+                organizer.get("name") == payload_with_phone["organizerName"],
+                organizer.get("email") == payload_with_phone["organizerEmail"]
+            ]
+            
+            passed = all(checks)
+            
+            if passed:
+                details = f"Status: {response.status_code}, Campaign ID: {campaign.get('id')}, Organizer phone: {phone_value}"
+            else:
+                details = f"Status: {response.status_code} | ERROR: "
+                if not has_phone:
+                    details += "Phone field missing in organizer object. "
+                if not phone_matches:
+                    details += f"Phone value mismatch (expected: {payload_with_phone['organizerPhone']}, got: {phone_value}). "
+        else:
+            details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+        
+        print_test("POST /api/campaigns with organizerPhone", passed, details)
+        record_test("Campaign creation with organizerPhone field", passed, critical=True)
+        return campaign.get("id") if passed else None
+    except Exception as e:
+        print_test("POST /api/campaigns with organizerPhone", False, f"Error: {str(e)}")
+        record_test("Campaign creation with organizerPhone field", False, critical=True)
+        return None
+
 def test_campaign_filters():
     """Test GET /api/campaigns with filters"""
-    print_section("8. Testing Campaign Filters")
+    print_section("9. Testing Campaign Filters")
     
     # Test category filter
     try:
@@ -519,7 +578,10 @@ def main():
     test_admin_stats()
     test_admin_donations()
     
-    # 9. Test filters
+    # 9. Test organizer phone field
+    test_organizer_phone_field()
+    
+    # 10. Test filters
     test_campaign_filters()
     
     # Print summary

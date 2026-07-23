@@ -132,6 +132,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✓ TESTED: All campaign endpoints working correctly. GET /api/campaigns returns only active campaigns. GET /api/campaigns/{id} retrieves single campaign. POST /api/campaigns correctly enforces 3 photo limit (returns 400 for >3 photos). Category and search filters working. Fixed typo in line 485 (status_code 4404 → 404)."
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: organizerPhone field functionality verified. POST /api/campaigns correctly accepts 'organizerPhone' in payload and saves it as 'phone' in the 'organizer' sub-object in MongoDB. Tested both scenarios: (1) with organizerPhone provided - correctly saved as phone field, (2) without organizerPhone - correctly defaults to 'N/A'. Campaign creation returns 200 OK with proper organizer structure."
   - task: "Donation submissions and list"
     implemented: true
     working: true
@@ -210,7 +213,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 3
+  test_sequence: 4
   run_ui: false
 
 test_plan:
@@ -229,3 +232,5 @@ agent_communication:
     message: "Backend testing complete. All 13 tests passed successfully. Fixed 2 minor issues: (1) Removed unsupported 'allow_origins_regex' parameter from CORS middleware that was causing 500 errors, (2) Fixed typo in error status code (4404 → 404) in payment approval endpoint. All API endpoints are working correctly including root, campaigns CRUD, donations, admin toggles, payment approvals, and stats."
   - agent: "testing"
     message: "Admin Panel testing complete. The 'Link is not defined' ReferenceError has been fully resolved. All statistics render correctly, campaigns table displays 4 active campaigns with proper data, and all navigation tabs are functional. Link component from react-router-dom is working correctly throughout the Admin Panel. Ready to test remaining frontend components (Home, CampaignDetail, CreateCampaign)."
+  - agent: "testing"
+    message: "organizerPhone field testing complete. All 14 backend tests passed successfully. Verified that POST /api/campaigns correctly accepts 'organizerPhone' in the payload and saves it as 'phone' in the 'organizer' sub-object in MongoDB. Tested both scenarios: (1) Campaign with organizerPhone provided - correctly saved with the provided phone number, (2) Campaign without organizerPhone - correctly defaults to 'N/A'. The endpoint returns 200 OK with proper organizer structure containing name, email, and phone fields."

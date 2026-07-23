@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 class Organizer(BaseModel):
     name: str
     email: str
+    phone: Optional[str] = "N/A"
 
 class CustomPaymentMethod(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -51,6 +52,7 @@ class CampaignCreate(BaseModel):
     images: List[str]
     organizerName: str
     organizerEmail: str
+    organizerPhone: Optional[str] = "N/A"
     customPaymentMethods: List[CustomPaymentMethodCreate] = []
 
 class CampaignResponse(BaseModel):
@@ -351,7 +353,8 @@ async def create_campaign(payload: CampaignCreate):
         "stripeEnabled": True,
         "organizer": {
             "name": payload.organizerName,
-            "email": payload.organizerEmail
+            "email": payload.organizerEmail,
+            "phone": payload.organizerPhone
         },
         "customPaymentMethods": [m.dict() for m in custom_methods],
         "createdAt": datetime.utcnow().isoformat() + "Z"

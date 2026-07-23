@@ -50,6 +50,7 @@ export const mockDb = {
         images: (campaignData.images || []).slice(0, 3),
         organizerName: campaignData.organizerName,
         organizerEmail: campaignData.organizerEmail,
+        organizerPhone: campaignData.organizerPhone,
         customPaymentMethods: (campaignData.customPaymentMethods || []).map(p => ({
           name: p.name,
           details: p.details

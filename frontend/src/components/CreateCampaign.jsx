@@ -27,6 +27,7 @@ export default function CreateCampaign() {
   const [description, setDescription] = useState("");
   const [organizerName, setOrganizerName] = useState("");
   const [organizerEmail, setOrganizerEmail] = useState("");
+  const [organizerPhone, setOrganizerPhone] = useState("");
 
   // Photos management - enforce maximum of 3
   const [images, setImages] = useState([]);
@@ -125,6 +126,7 @@ export default function CreateCampaign() {
       description,
       organizerName,
       organizerEmail,
+      organizerPhone,
       images,
       customPaymentMethods: paymentMethods.filter(p => p.details.trim() !== "")
     };
@@ -202,16 +204,30 @@ export default function CreateCampaign() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Correo Electrónico de Contacto</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="Ej: contacto@organizacion.es"
-                  value={organizerEmail}
-                  onChange={(e) => setOrganizerEmail(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/50"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Correo Electrónico de Contacto</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Ej: contacto@organizacion.es"
+                    value={organizerEmail}
+                    onChange={(e) => setOrganizerEmail(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Teléfono Celular <span className="text-[10px] text-gray-400 font-normal">(Privado)</span></label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Ej: +34 600 123 456"
+                    value={organizerPhone}
+                    onChange={(e) => setOrganizerPhone(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  />
+                </div>
               </div>
 
               <div>
