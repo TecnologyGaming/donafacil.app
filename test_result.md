@@ -220,11 +220,22 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✓ TESTED: Admin Panel loads correctly without any React errors. The 'Link is not defined' ReferenceError has been fully resolved. All statistics render properly (4 stat cards: Campañas Activas: 4, Campañas Suspendidas: 0, Pagos por Aprobar: 1, Operaciones de Pago: 0). Total donations stat shows 30.050 €. All 3 navigation tabs are functional (Gestión de Solicitudes, Aprobación de Métodos Manuales, Historial de Donaciones). Campaigns table lists 4 active campaigns correctly with all details including campaign title, organizer, category, raised/goal amounts, Stripe toggle, active status toggle, and 'Ver' links. Link component from react-router-dom is working correctly. Tab switching works smoothly. Only minor issue: Cloudflare RUM endpoint failed (non-critical)."
+  - task: "Register Modal Mobile Responsive Layout"
+    implemented: true
+    working: true
+    file: "frontend/src/components/AuthModal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: Register Modal fully functional on mobile viewport (375x667). Modal opens successfully when clicking 'Ingresar / Registrarse' button. Modal dimensions: 343px width × 636.5px height (fits within viewport). All form fields are visible and accessible: Name, Surname, Phone, Email, Password fields all render correctly with proper positioning. Modal is fully scrollable (scrollHeight: 733px, clientHeight: 64px) with overflow-y-auto enabled on wrapper. Scroll test confirmed modal can scroll from 0 to 200px. No inputs are clipped - all fields accessible via scrolling. Successfully tested input interaction: filled all fields (Name: María, Surname: González, Phone: +58 412 345 6789, Email: maria.gonzalez@ejemplo.com, Password: MiContraseña2024!). Submit button (Registrar e Iniciar) is visible and accessible. Toggle link ('¿Ya tienes una cuenta? Inicia Sesión') is visible at bottom. Close button (✕) works correctly - modal dismisses successfully when clicked. All elements positioned correctly: Name field (y=260px), Surname field (y=260px), Phone field (y=333px), Email field (y=423.5px), Password field (y=496.5px), Submit button (y=550.5px), Toggle link (y=640.5px). Modal wrapper has proper overflow-y-auto class enabling smooth scrolling. User can view complete form and dismiss it without any issues."
 
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 4
+  test_sequence: 5
   run_ui: false
 
 test_plan:
@@ -247,3 +258,5 @@ agent_communication:
     message: "organizerPhone field testing complete. All 14 backend tests passed successfully. Verified that POST /api/campaigns correctly accepts 'organizerPhone' in the payload and saves it as 'phone' in the 'organizer' sub-object in MongoDB. Tested both scenarios: (1) Campaign with organizerPhone provided - correctly saved with the provided phone number, (2) Campaign without organizerPhone - correctly defaults to 'N/A'. The endpoint returns 200 OK with proper organizer structure containing name, email, and phone fields."
   - agent: "testing"
     message: "Mobile responsive logo visibility testing complete. Verified on mobile viewport (375x667) that the 'donafacil.app' logo text is fully visible next to the heart icon in the Navbar. The 'hidden sm:inline-block' responsive bug has been completely resolved. Logo text now uses 'inline-block' class without any 'hidden' class, making it visible across all mobile screen sizes tested (320px, 375px, 390px). Logo has proper dimensions (99.41px × 28.00px) and CSS properties (display: block, visibility: visible, opacity: 1)."
+  - agent: "testing"
+    message: "Register Modal mobile responsive testing complete. Tested on mobile viewport (375x667) as requested. Modal opens successfully, is fully scrollable (scrollHeight: 733px with overflow-y-auto), and all form fields are accessible without clipping. Successfully tested all inputs (Name, Surname, Phone, Email, Password), submit button, and close functionality. Modal dimensions (343px × 636.5px) fit within viewport. All elements positioned correctly and user can view complete form and dismiss it without any issues. No critical issues found - modal is fully functional on mobile."

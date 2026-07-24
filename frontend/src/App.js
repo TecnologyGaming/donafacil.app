@@ -20,7 +20,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/campaigns/:id" element={<CampaignDetail />} />
             <Route path="/create" element={<CreateCampaign />} />
-            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/donatex" element={<AdminPanel />} />
             <Route path="/dashboard" element={<UserDashboard />} />
           </Routes>
         </main>

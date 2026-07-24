@@ -48,7 +48,7 @@ export default function Navbar() {
     }
     window.dispatchEvent(new Event("df_role_changed"));
     if (newRole === "admin") {
-      navigate("/admin");
+      navigate("/donatex");
     } else if (newRole === "organizer") {
       navigate("/dashboard");
     } else {
@@ -122,15 +122,6 @@ export default function Navbar() {
             >
               Creador
             </button>
-            <button
-              onClick={() => handleRoleChange("admin")}
-              className={`px-2.5 py-1 rounded-full transition-all ${
-                role === "admin" ? "bg-white text-emerald-700 font-semibold shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Ver como Administrador"
-            >
-              Admin
-            </button>
           </div>
 
           {/* Conditional Navigation Link */}
@@ -138,7 +129,7 @@ export default function Navbar() {
             <div className="flex items-center gap-4">
               {role === "admin" ? (
                 <Link
-                  to="/admin"
+                  to="/donatex"
                   className="flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full transition-all"
                 >
                   <Shield className="h-4 w-4" />
