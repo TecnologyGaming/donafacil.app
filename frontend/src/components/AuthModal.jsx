@@ -75,8 +75,8 @@ export default function AuthModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 overflow-y-auto p-4 flex justify-center items-start sm:items-center text-left font-sans">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border p-6 sm:p-8 my-8 sm:my-0 space-y-6 relative">
+    <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-md z-[1000] overflow-y-auto p-4 flex justify-center items-center text-left font-sans">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-sm sm:max-w-md w-full border p-6 sm:p-8 my-auto space-y-6 relative">
         
         {/* Close Button */}
         {onClose && (

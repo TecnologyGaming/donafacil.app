@@ -37,6 +37,9 @@ function App() {
               <p>
                 donafacil.app se reserva el derecho exclusivo de realizar **bloqueos preventivos de cuentas y fondos** de manera inmediata en caso de detectar anomalías, sospechas de fraude o denuncias de la comunidad. Asimismo, todos los métodos de pago y cobro registrados (como Zelle, Pago Móvil o Cuentas Bancarias) están sujetos a un **proceso estricto de auditoría y aprobación manual** por parte de la administración del portal antes de ser mostrados públicamente a los donantes para resguardar la seguridad del ecosistema.
               </p>
+              <p>
+                **Costo de Uso de la Plataforma:** donafacil.app establece un cobro/tarifa del **5% por cada transacción o donativo realizado**. Este porcentaje se destina de forma íntegra a fondos de donación de la aplicación para apoyar directamente a otras causas de los creadores de nuestro portal que se encuentren en situaciones de alta vulnerabilidad o urgencia requerida.
+              </p>
             </div>
             <p className="text-[11px] text-slate-300">© 2025 donafacil.app. Todos los derechos reservados.</p>
           </div>

@@ -231,6 +231,20 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✓ TESTED: Register Modal fully functional on mobile viewport (375x667). Modal opens successfully when clicking 'Ingresar / Registrarse' button. Modal dimensions: 343px width × 636.5px height (fits within viewport). All form fields are visible and accessible: Name, Surname, Phone, Email, Password fields all render correctly with proper positioning. Modal is fully scrollable (scrollHeight: 733px, clientHeight: 64px) with overflow-y-auto enabled on wrapper. Scroll test confirmed modal can scroll from 0 to 200px. No inputs are clipped - all fields accessible via scrolling. Successfully tested input interaction: filled all fields (Name: María, Surname: González, Phone: +58 412 345 6789, Email: maria.gonzalez@ejemplo.com, Password: MiContraseña2024!). Submit button (Registrar e Iniciar) is visible and accessible. Toggle link ('¿Ya tienes una cuenta? Inicia Sesión') is visible at bottom. Close button (✕) works correctly - modal dismisses successfully when clicked. All elements positioned correctly: Name field (y=260px), Surname field (y=260px), Phone field (y=333px), Email field (y=423.5px), Password field (y=496.5px), Submit button (y=550.5px), Toggle link (y=640.5px). Modal wrapper has proper overflow-y-auto class enabling smooth scrolling. User can view complete form and dismiss it without any issues."
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: Register Modal z-index and backdrop-blur verification on mobile viewport (375x667). Modal wrapper has correct z-index: 1000 (>= 1000 requirement met). Modal wrapper classes confirmed: 'fixed inset-0 bg-slate-900/75 backdrop-blur-md z-[1000] overflow-y-auto p-4 flex justify-center items-center text-left font-sans'. backdrop-blur-md class is present and applied in computed styles as blur(12px). z-[1000] class is present. Modal is positioned fixed with inset-0, ensuring it floats cleanly on top of all headers and elements. Modal content dimensions: 343px × 636.5px. All styling requirements verified and working correctly."
+  - task: "Terms and Conditions with 5% Transaction Fee"
+    implemented: true
+    working: true
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: Terms and Conditions block in footer contains the 5% transaction fee text. Verified on mobile viewport (375x667). Footer Terms and Conditions block exists and is visible. Text content confirmed: 'donafacil.app establece un cobro/tarifa del **5% por cada transacción o donativo realizado**. Este porcentaje se destina de forma íntegra a fondos de donación de la aplicación para apoyar directamente a otras causas de los creadores de nuestro portal que se encuentren en situaciones de alta vulnerabilidad o urgencia requerida.' Full Terms and Conditions block is 923 characters long and properly formatted in the footer. All requirements met."
 
 metadata:
   created_by: "main_agent"
@@ -260,3 +274,5 @@ agent_communication:
     message: "Mobile responsive logo visibility testing complete. Verified on mobile viewport (375x667) that the 'donafacil.app' logo text is fully visible next to the heart icon in the Navbar. The 'hidden sm:inline-block' responsive bug has been completely resolved. Logo text now uses 'inline-block' class without any 'hidden' class, making it visible across all mobile screen sizes tested (320px, 375px, 390px). Logo has proper dimensions (99.41px × 28.00px) and CSS properties (display: block, visibility: visible, opacity: 1)."
   - agent: "testing"
     message: "Register Modal mobile responsive testing complete. Tested on mobile viewport (375x667) as requested. Modal opens successfully, is fully scrollable (scrollHeight: 733px with overflow-y-auto), and all form fields are accessible without clipping. Successfully tested all inputs (Name, Surname, Phone, Email, Password), submit button, and close functionality. Modal dimensions (343px × 636.5px) fit within viewport. All elements positioned correctly and user can view complete form and dismiss it without any issues. No critical issues found - modal is fully functional on mobile."
+  - agent: "testing"
+    message: "Mobile viewport z-index and backdrop-blur verification complete. Tested Register Modal on mobile viewport (375x667). CONFIRMED: Modal wrapper has z-index: 1000 (>= 1000 requirement met), z-[1000] class is present, backdrop-blur-md class is present and applied as blur(12px) in computed styles. Modal floats cleanly on top of all headers and elements with fixed positioning (inset-0). Terms and Conditions block in footer verified to contain the 5% transaction fee text: 'donafacil.app establece un cobro/tarifa del **5% por cada transacción o donativo realizado**'. All requirements from user request have been successfully verified and are working correctly."
