@@ -37,6 +37,7 @@ export default function CreateCampaign() {
 
   // Photos management - enforce maximum of 3
   const [images, setImages] = useState([]);
+  const [primaryImageIndex, setPrimaryImageIndex] = useState(0);
   const [customImageUrl, setCustomImageUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -148,6 +149,14 @@ export default function CreateCampaign() {
       return;
     }
 
+    // Reorder images list so that the primary image is at index 0
+    const reorderedImages = [...images];
+    if (primaryImageIndex > 0 && primaryImageIndex < reorderedImages.length) {
+      const primaryImg = reorderedImages[primaryImageIndex];
+      reorderedImages.splice(primaryImageIndex, 1);
+      reorderedImages.unshift(primaryImg); // insert at index 0
+    }
+
     // Prepare campaign data
     const campaignData = {
       title,
@@ -159,7 +168,8 @@ export default function CreateCampaign() {
       organizerPhone,
       cedulaImage,
       selfieImage,
-      images,
+      images: reorderedImages,
+      primaryImage: reorderedImages[0],
       customPaymentMethods: paymentMethods.filter(p => p.details.trim() !== "")
     };
 
@@ -413,21 +423,48 @@ export default function CreateCampaign() {
                 {/* Selected Images Previews */}
                 {images.length > 0 && (
                   <div className="grid grid-cols-3 gap-3">
-                    {images.map((img, idx) => (
-                      <div key={idx} className="relative aspect-video rounded-lg overflow-hidden border bg-slate-100 group">
-                        <img src={img} alt="Vista previa" className="object-cover w-full h-full" />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(idx)}
-                          className="absolute top-1.5 right-1.5 bg-rose-600/90 hover:bg-rose-700 text-white p-1 rounded-full shadow transition-all"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                        <div className="absolute bottom-1 left-1.5 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">
-                          Foto {idx + 1}
+                    {images.map((img, idx) => {
+                      const isPrimary = primaryImageIndex === idx;
+                      return (
+                        <div key={idx} className={`relative aspect-video rounded-lg overflow-hidden border bg-slate-100 group flex flex-col justify-between ${
+                          isPrimary ? "border-amber-400 ring-2 ring-amber-400/30" : "border-slate-200"
+                        }`}>
+                          <img src={img} alt="Vista previa" className="object-cover w-full h-full" />
+                          
+                          {/* Trash button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImages(images.filter((_, i) => i !== idx));
+                              if (primaryImageIndex === idx) {
+                                setPrimaryImageIndex(0);
+                              } else if (primaryImageIndex > idx) {
+                                setPrimaryImageIndex(prev => prev - 1);
+                              }
+                            }}
+                            className="absolute top-1.5 right-1.5 bg-rose-600/90 hover:bg-rose-700 text-white p-1 rounded-full shadow transition-all"
+                            title="Eliminar foto"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+
+                          {/* Primary Badge or Selector button */}
+                          {isPrimary ? (
+                            <span className="absolute bottom-1.5 left-1.5 bg-amber-500 text-white text-[9px] px-2 py-0.5 rounded-md font-bold flex items-center gap-0.5 shadow-sm">
+                              ★ Principal
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setPrimaryImageIndex(idx)}
+                              className="absolute bottom-1.5 left-1.5 bg-black/70 hover:bg-black/90 text-white text-[8px] px-2 py-0.5 rounded font-bold transition-all"
+                            >
+                              Hacer Principal
+                            </button>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
                 {images.length === 3 && (
