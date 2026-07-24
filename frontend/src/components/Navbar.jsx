@@ -1,16 +1,51 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import AuthModal from "./AuthModal";
 import { Heart, User, Shield, Compass, PlusCircle, Search, LayoutDashboard, LogOut } from "lucide-react";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const [role, setRole] = useState(localStorage.getItem("df_user_role") || "donor");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Real session state
+  const [user, setUser] = useState(localStorage.getItem("df_user") ? JSON.parse(localStorage.getItem("df_user")) : null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  useEffect(() => {
+    const handleLogin = () => {
+      const u = localStorage.getItem("df_user") ? JSON.parse(localStorage.getItem("df_user")) : null;
+      setUser(u);
+      setRole(localStorage.getItem("df_user_role") || "donor");
+    };
+    window.addEventListener("df_user_login", handleLogin);
+    window.addEventListener("df_role_changed", handleLogin);
+    return () => {
+      window.removeEventListener("df_user_login", handleLogin);
+      window.removeEventListener("df_role_changed", handleLogin);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("df_user");
+    localStorage.removeItem("df_user_role");
+    setUser(null);
+    setRole("donor");
+    window.dispatchEvent(new Event("df_user_login"));
+    window.dispatchEvent(new Event("df_role_changed"));
+    navigate("/");
+  };
 
   const handleRoleChange = (newRole) => {
     localStorage.setItem("df_user_role", newRole);
     setRole(newRole);
-    // Dispatch custom event to let other components know the role changed
+    if (newRole === "donor") {
+      localStorage.removeItem("df_user");
+      setUser(null);
+    } else if (newRole === "organizer" && !user) {
+      // Force Login if switching to creator and not logged in
+      setShowAuthModal(true);
+    }
     window.dispatchEvent(new Event("df_role_changed"));
     if (newRole === "admin") {
       navigate("/admin");
@@ -99,39 +134,63 @@ export default function Navbar() {
           </div>
 
           {/* Conditional Navigation Link */}
-          {role === "admin" ? (
-            <Link
-              to="/admin"
-              className="flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full transition-all"
-            >
-              <Shield className="h-4 w-4" />
-              <span className="hidden md:inline">Panel Admin</span>
-            </Link>
-          ) : role === "organizer" ? (
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full transition-all"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              <span className="hidden md:inline">Mi Panel</span>
-            </Link>
-          ) : (
-            <Link
-              to="/create"
-              className="hidden lg:flex items-center gap-1 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-full shadow-sm hover:shadow transition-all"
-            >
-              <PlusCircle className="h-4 w-4" />
-              Recaudar Fondos
-            </Link>
-          )}
+          {user ? (
+            <div className="flex items-center gap-4">
+              {role === "admin" ? (
+                <Link
+                  to="/admin"
+                  className="flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full transition-all"
+                >
+                  <Shield className="h-4 w-4" />
+                  <span className="hidden md:inline">Panel Admin</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/dashboard"
+                  className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full transition-all"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span className="hidden md:inline">Mi Panel</span>
+                </Link>
+              )}
 
-          {/* Quick Avatar Mock */}
-          <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200">
-            {role === "admin" ? "AD" : role === "organizer" ? "LM" : "DN"}
-          </div>
+              <button
+                onClick={handleLogout}
+                className="text-xs font-semibold text-slate-500 hover:text-rose-600 transition-colors"
+              >
+                Cerrar Sesión
+              </button>
+
+              {/* Real Initials Avatar matching screenshot */}
+              <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-extrabold border border-emerald-200 text-xs shadow-sm cursor-pointer" title={user.name}>
+                {user.name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-full border border-emerald-100 transition-all"
+              >
+                Ingresar / Registrarse
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
+
+      {showAuthModal && (
+        <AuthModal 
+          onClose={() => setShowAuthModal(false)} 
+          onSuccess={() => {
+            const u = JSON.parse(localStorage.getItem("df_user"));
+            setUser(u);
+            setRole("organizer");
+            navigate("/dashboard");
+          }}
+        />
+      )}
     </header>
   );
 }

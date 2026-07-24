@@ -10,7 +10,8 @@ import {
   where, 
   orderBy, 
   setDoc,
-  increment
+  increment,
+  deleteDoc
 } from "firebase/firestore";
 
 // Seed initial campaigns to Cloud Firestore if empty
@@ -444,6 +445,35 @@ export const mockDb = {
     } catch (e) {
       console.error("Error adding custom payment method:", e);
       throw e;
+    }
+  },
+
+  // Update campaign
+  updateCampaign: async (id, updateData) => {
+    try {
+      const campaignRef = doc(db, "campaigns", id);
+      await updateDoc(campaignRef, {
+        title: updateData.title,
+        description: updateData.description,
+        category: updateData.category,
+        goal: parseFloat(updateData.goal)
+      });
+      return true;
+    } catch (e) {
+      console.error("Error updating campaign:", e);
+      return false;
+    }
+  },
+
+  // Delete campaign
+  deleteCampaign: async (id) => {
+    try {
+      const campaignRef = doc(db, "campaigns", id);
+      await deleteDoc(campaignRef);
+      return true;
+    } catch (e) {
+      console.error("Error deleting campaign:", e);
+      return false;
     }
   },
 

@@ -14,6 +14,13 @@ export default function UserDashboard() {
   const [newMethodDetails, setNewMethodDetails] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Edit Campaign States
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editCategory, setEditCategory] = useState("Salud");
+  const [editGoal, setEditGoal] = useState("");
+
   const loadData = async () => {
     try {
       const all = await mockDb.getCampaigns();
@@ -59,6 +66,66 @@ export default function UserDashboard() {
       });
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleStartEdit = () => {
+    if (!selectedCampaign) return;
+    setEditTitle(selectedCampaign.title);
+    setEditDescription(selectedCampaign.description);
+    setEditCategory(selectedCampaign.category);
+    setEditGoal(selectedCampaign.goal.toString());
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editTitle || !editDescription || !editGoal) {
+      toast({
+        title: "Campos vacíos",
+        description: "Completa todos los campos obligatorios.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await mockDb.updateCampaign(selectedCampaign.id, {
+        title: editTitle,
+        description: editDescription,
+        category: editCategory,
+        goal: parseFloat(editGoal)
+      });
+      setIsEditing(false);
+      await loadData();
+      toast({
+        title: "Campaña Editada",
+        description: "Tus cambios han sido guardados en el servidor con éxito.",
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error al actualizar",
+        description: "Hubo un problema guardando tus cambios.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteCampaign = async () => {
+    if (!selectedCampaign) return;
+    if (window.confirm("¿Estás absolutamente seguro de que quieres eliminar esta campaña de forma permanente? Esta acción borrará todas tus donaciones y registros y no se puede deshacer.")) {
+      try {
+        await mockDb.deleteCampaign(selectedCampaign.id);
+        toast({
+          title: "Campaña Eliminada",
+          description: "Tu solicitud de donativo ha sido borrada permanentemente del portal.",
+        });
+        setSelectedCampaign(null);
+        await loadData();
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -213,14 +280,29 @@ export default function UserDashboard() {
                   </div>
                 </div>
 
-                <div className="flex justify-end">
-                  <Link
-                    to={`/campaigns/${selectedCampaign.id}`}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 border border-emerald-100 px-3.5 py-2 rounded-xl transition-all"
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t">
+                  <button
+                    onClick={handleDeleteCampaign}
+                    className="bg-rose-50 border border-rose-100 hover:bg-rose-100 text-rose-700 text-xs font-bold px-4 py-2 rounded-xl transition-all"
                   >
-                    Ver campaña pública
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Link>
+                    Eliminar Campaña
+                  </button>
+
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      onClick={handleStartEdit}
+                      className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all"
+                    >
+                      Editar Historia
+                    </button>
+                    <Link
+                      to={`/campaigns/${selectedCampaign.id}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 border border-emerald-100 px-3.5 py-2 rounded-xl transition-all"
+                    >
+                      Ver campaña pública
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Link>
+                  </div>
                 </div>
               </div>
 
@@ -357,6 +439,91 @@ export default function UserDashboard() {
         )}
 
       </div>
+
+      {/* Edit Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border">
+            
+            {/* Header */}
+            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+              <h3 className="font-extrabold text-base">Editar Historia de la Campaña</h3>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="text-white/80 hover:text-white font-bold text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveEdit} className="p-6 space-y-4 text-left">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Título de la Campaña</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Título..."
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Categoría</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none bg-white font-semibold"
+                  >
+                    <option value="Salud">Salud</option>
+                    <option value="Emergencias">Emergencias</option>
+                    <option value="Educación">Educación</option>
+                    <option value="Deportes">Deportes</option>
+                    <option value="Mascotas">Mascotas</option>
+                    <option value="Comunidad">Comunidad</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Meta de Recaudación (€)</label>
+                  <input
+                    type="number"
+                    required
+                    min="100"
+                    placeholder="5000"
+                    value={editGoal}
+                    onChange={(e) => setEditGoal(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Descripción de la Causa</label>
+                <textarea
+                  required
+                  rows="5"
+                  placeholder="Descripción..."
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+              >
+                Guardar Cambios
+              </button>
+            </form>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
