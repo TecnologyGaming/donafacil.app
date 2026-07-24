@@ -28,6 +28,10 @@ export default function CreateCampaign() {
   const [organizerName, setOrganizerName] = useState("");
   const [organizerEmail, setOrganizerEmail] = useState("");
   const [organizerPhone, setOrganizerPhone] = useState("");
+  
+  // Identity Verification (Private)
+  const [cedulaImage, setCedulaImage] = useState("");
+  const [selfieImage, setSelfieImage] = useState("");
 
   // Photos management - enforce maximum of 3
   const [images, setImages] = useState([]);
@@ -118,6 +122,15 @@ export default function CreateCampaign() {
       return;
     }
 
+    if (!cedulaImage || !selfieImage) {
+      toast({
+        title: "Falta Verificación de Identidad",
+        description: "Es obligatorio subir la foto de tu cédula/ID y la selfie de verificación.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Prepare campaign data
     const campaignData = {
       title,
@@ -127,6 +140,8 @@ export default function CreateCampaign() {
       organizerName,
       organizerEmail,
       organizerPhone,
+      cedulaImage,
+      selfieImage,
       images,
       customPaymentMethods: paymentMethods.filter(p => p.details.trim() !== "")
     };
@@ -403,6 +418,99 @@ export default function CreateCampaign() {
                     <ShieldAlert className="h-3.5 w-3.5" /> Has alcanzado el límite de 3 fotos permitido por solicitud.
                   </p>
                 )}
+              </div>
+
+              {/* Seccion de Verificacion de Identidad */}
+              <div className="border-t pt-5 mt-4 space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600" />
+                    Verificación de Identidad Obligatoria <span className="text-[10px] text-gray-400 font-normal lowercase">(solo visible para admin)</span>
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Sube tu documento de identidad (Cédula/DNI/Pasaporte) y una foto selfie sosteniéndolo al lado de tu rostro. Esto es obligatorio para activar tu campaña de forma legítima.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Cedula Input */}
+                  <div className="border p-4 rounded-xl bg-slate-50/50 space-y-3">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase">1. Foto de tu Cédula / ID</label>
+                    {cedulaImage ? (
+                      <div className="relative aspect-video rounded-lg overflow-hidden border">
+                        <img src={cedulaImage} alt="Cédula" className="object-cover w-full h-full" />
+                        <button
+                          type="button"
+                          onClick={() => setCedulaImage("")}
+                          className="absolute top-1.5 right-1.5 bg-rose-600 text-white p-1 rounded-full shadow hover:bg-rose-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center border border-dashed p-4 rounded-lg bg-white space-y-2">
+                        <label className="bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold px-3.5 py-2 rounded-xl cursor-pointer transition-all">
+                          Examinar Cédula
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const f = e.target.files[0];
+                              if (f) setCedulaImage(URL.createObjectURL(f));
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                        <span className="text-[10px] text-gray-400">o pega enlace web de prueba:</span>
+                        <input
+                          type="text"
+                          placeholder="https://..."
+                          onChange={(e) => setCedulaImage(e.target.value)}
+                          className="w-full text-[10px] border px-2 py-1.5 rounded-lg outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Selfie Input */}
+                  <div className="border p-4 rounded-xl bg-slate-50/50 space-y-3">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase">2. Selfie sosteniendo tu Cédula</label>
+                    {selfieImage ? (
+                      <div className="relative aspect-video rounded-lg overflow-hidden border">
+                        <img src={selfieImage} alt="Selfie" className="object-cover w-full h-full" />
+                        <button
+                          type="button"
+                          onClick={() => setSelfieImage("")}
+                          className="absolute top-1.5 right-1.5 bg-rose-600 text-white p-1 rounded-full shadow hover:bg-rose-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center border border-dashed p-4 rounded-lg bg-white space-y-2">
+                        <label className="bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold px-3.5 py-2 rounded-xl cursor-pointer transition-all">
+                          Examinar Selfie
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const f = e.target.files[0];
+                              if (f) setSelfieImage(URL.createObjectURL(f));
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                        <span className="text-[10px] text-gray-400">o pega enlace web de prueba:</span>
+                        <input
+                          type="text"
+                          placeholder="https://..."
+                          onChange={(e) => setSelfieImage(e.target.value)}
+                          className="w-full text-[10px] border px-2 py-1.5 rounded-lg outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-between pt-4 border-t">

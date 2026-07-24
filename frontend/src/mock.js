@@ -294,6 +294,8 @@ export const mockDb = {
         images: (campaignData.images || []).slice(0, 3),
         isActive: true,
         stripeEnabled: true,
+        cedulaImage: campaignData.cedulaImage || "N/A",
+        selfieImage: campaignData.selfieImage || "N/A",
         organizer: {
           name: campaignData.organizerName,
           email: campaignData.organizerEmail,

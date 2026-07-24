@@ -9,6 +9,10 @@ export default function AdminPanel() {
   const [campaigns, setCampaigns] = useState([]);
   const [activeTab, setActiveTab] = useState("campanas");
 
+  // Verification Modal States
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [selectedCampaignForVerify, setSelectedCampaignForVerify] = useState(null);
+
   // Admin Login States
   const [isAdminLogged, setIsAdminLogged] = useState(localStorage.getItem("df_admin_logged") === "true");
   const [loginUser, setLoginUser] = useState("");
@@ -159,7 +163,7 @@ export default function AdminPanel() {
               <input
                 type="text"
                 required
-                placeholder="DONATEX"
+                placeholder="Ingresa tu usuario de administrador"
                 value={loginUser}
                 onChange={(e) => setLoginUser(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/50"
@@ -171,7 +175,7 @@ export default function AdminPanel() {
               <input
                 type="password"
                 required
-                placeholder="Venezuela257#"
+                placeholder="Ingresa tu clave de administrador"
                 value={loginPass}
                 onChange={(e) => setLoginPass(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/50"
@@ -376,12 +380,23 @@ export default function AdminPanel() {
                         </td>
 
                         <td className="p-4 text-right">
-                          <Link
-                            to={`/campaigns/${c.id}`}
-                            className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-700"
-                          >
-                            Ver <ArrowUpRight className="h-3 w-3" />
-                          </Link>
+                          <div className="flex items-center justify-end gap-3">
+                            <button
+                              onClick={() => {
+                                setSelectedCampaignForVerify(c);
+                                setShowVerifyModal(true);
+                              }}
+                              className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-all"
+                            >
+                              Docs Verificación
+                            </button>
+                            <Link
+                              to={`/campaigns/${c.id}`}
+                              className="inline-flex items-center gap-0.5 text-xs font-bold text-emerald-600 hover:text-emerald-700"
+                            >
+                              Ver Causa <ArrowUpRight className="h-3 w-3" />
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -524,6 +539,115 @@ export default function AdminPanel() {
         )}
 
       </div>
+
+      {/* Modal de Verificacion de Identidad */}
+      {showVerifyModal && selectedCampaignForVerify && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border">
+            
+            {/* Header */}
+            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block">Auditoría de Identidad</span>
+                <span className="font-extrabold text-base">{selectedCampaignForVerify.title}</span>
+              </div>
+              <button
+                onClick={() => {
+                  setShowVerifyModal(false);
+                  setSelectedCampaignForVerify(null);
+                }}
+                className="text-white/80 hover:text-white font-bold text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+              
+              {/* Organizer details */}
+              <div className="bg-slate-50 p-4 border rounded-xl grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div>
+                  <span className="font-bold text-gray-400 block uppercase">Nombre Organizador</span>
+                  <span className="font-bold text-gray-900 text-sm">{selectedCampaignForVerify.organizer.name}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-400 block uppercase">Correo</span>
+                  <span className="font-semibold text-gray-900 text-sm break-all">{selectedCampaignForVerify.organizer.email}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-400 block uppercase">Teléfono Celular</span>
+                  <span className="font-bold text-gray-900 text-sm">{selectedCampaignForVerify.organizer.phone || "No registrado"}</span>
+                </div>
+              </div>
+
+              {/* Images previews */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                
+                {/* Cedula Box */}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block text-center">
+                    1. Cédula de Identidad / DNI
+                  </span>
+                  <div className="aspect-video bg-slate-100 rounded-xl overflow-hidden border flex items-center justify-center relative group">
+                    {selectedCampaignForVerify.cedulaImage && selectedCampaignForVerify.cedulaImage !== "N/A" ? (
+                      <img 
+                        src={selectedCampaignForVerify.cedulaImage} 
+                        alt="Cédula" 
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <span className="text-xs text-slate-400 italic">No cargada en la creación</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Selfie Box */}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block text-center">
+                    2. Selfie con la Cédula
+                  </span>
+                  <div className="aspect-video bg-slate-100 rounded-xl overflow-hidden border flex items-center justify-center relative group">
+                    {selectedCampaignForVerify.selfieImage && selectedCampaignForVerify.selfieImage !== "N/A" ? (
+                      <img 
+                        src={selectedCampaignForVerify.selfieImage} 
+                        alt="Selfie" 
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <span className="text-xs text-slate-400 italic">No cargada en la creación</span>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Actions */}
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex gap-3 items-center text-xs text-emerald-800 leading-relaxed">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                <p>
+                  <strong>¿Los datos coinciden?</strong> Como administrador, puedes validar estas fotos con el nombre del organizador. Si es legítimo, puedes mantener la campaña encendida en la tabla principal de solicitudes.
+                </p>
+              </div>
+
+            </div>
+
+            {/* Footer buttons */}
+            <div className="bg-slate-50 p-4 border-t flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowVerifyModal(false);
+                  setSelectedCampaignForVerify(null);
+                }}
+                className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs py-2 px-5 rounded-xl transition-all"
+              >
+                Cerrar Ventana
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
