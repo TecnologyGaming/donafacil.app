@@ -94,8 +94,17 @@ export default function CreateCampaign() {
     });
   };
 
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   // Simulated File Upload
-  const handleSimulatedFileUpload = (e) => {
+  const handleSimulatedFileUpload = async (e) => {
     if (images.length >= 3) {
       toast({
         title: "Límite de fotos alcanzado",
@@ -107,11 +116,12 @@ export default function CreateCampaign() {
     
     const file = e.target.files[0];
     if (file) {
-      // Convert to mock object/local object URL
-      const fakeUrl = URL.createObjectURL(file);
-      // Wait, in real web we will upload it. Here we use preset image or createObjectURL
-      // Let's use createObjectURL for local session showcase!
-      handleAddImage(fakeUrl);
+      try {
+        const base64Url = await convertToBase64(file);
+        handleAddImage(base64Url);
+      } catch (err) {
+        console.error("Error converting file to Base64:", err);
+      }
     }
   };
 
@@ -508,9 +518,12 @@ export default function CreateCampaign() {
                           <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const f = e.target.files[0];
-                              if (f) setCedulaImage(URL.createObjectURL(f));
+                              if (f) {
+                                const base64 = await convertToBase64(f);
+                                setCedulaImage(base64);
+                              }
                             }}
                             className="hidden"
                           />
@@ -547,9 +560,12 @@ export default function CreateCampaign() {
                           <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const f = e.target.files[0];
-                              if (f) setSelfieImage(URL.createObjectURL(f));
+                              if (f) {
+                                const base64 = await convertToBase64(f);
+                                setSelfieImage(base64);
+                              }
                             }}
                             className="hidden"
                           />

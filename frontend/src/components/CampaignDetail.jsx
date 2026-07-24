@@ -216,6 +216,10 @@ export default function CampaignDetail() {
                   src={campaign.images[activeImageIdx] || "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80"}
                   alt={campaign.title}
                   className="object-cover w-full h-full transition-all duration-300"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80";
+                  }}
                 />
                 
                 {campaign.images.length > 1 && (
@@ -247,7 +251,15 @@ export default function CampaignDetail() {
                         activeImageIdx === idx ? "border-emerald-600 scale-102" : "border-transparent hover:border-slate-300"
                       }`}
                     >
-                      <img src={img} alt="Miniatura" className="object-cover w-full h-full" />
+                      <img 
+                        src={img} 
+                        alt="Miniatura" 
+                        className="object-cover w-full h-full" 
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=150&q=80";
+                        }}
+                      />
                     </button>
                   ))}
                 </div>
