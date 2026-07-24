@@ -6,6 +6,7 @@ import CampaignDetail from "./components/CampaignDetail";
 import CreateCampaign from "./components/CreateCampaign";
 import AdminPanel from "./components/AdminPanel";
 import UserDashboard from "./components/UserDashboard";
+import SupportChatBubble from "./components/SupportChatBubble";
 import { Toaster } from "./components/ui/toaster";
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
           </div>
         </footer>
 
+        <SupportChatBubble />
         <Toaster />
       </BrowserRouter>
     </div>

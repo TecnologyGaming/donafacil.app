@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockDb } from "../mock";
 import { useToast } from "../hooks/use-toast";
+import AuthModal from "./AuthModal";
 import { Camera, Plus, Trash2, ArrowRight, ArrowLeft, Heart, Sparkles, CheckCircle2, ShieldAlert } from "lucide-react";
 
 const CATEGORIES = ["Salud", "Emergencias", "Educación", "Deportes", "Mascotas", "Comunidad"];
@@ -20,15 +21,16 @@ export default function CreateCampaign() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const [user, setUser] = useState(localStorage.getItem("df_user") ? JSON.parse(localStorage.getItem("df_user")) : null);
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Salud");
   const [goal, setGoal] = useState("5000");
   const [description, setDescription] = useState("");
-  const [organizerName, setOrganizerName] = useState("");
-  const [organizerEmail, setOrganizerEmail] = useState("");
-  const [organizerPhone, setOrganizerPhone] = useState("");
-  
+  const [organizerName, setOrganizerName] = useState(user ? user.name : "");
+  const [organizerEmail, setOrganizerEmail] = useState(user ? user.email : "");
+  const [organizerPhone, setOrganizerPhone] = useState(user ? user.phone : "");
+
   // Identity Verification (Private)
   const [cedulaImage, setCedulaImage] = useState("");
   const [selfieImage, setSelfieImage] = useState("");
@@ -40,11 +42,26 @@ export default function CreateCampaign() {
 
   // Custom payment methods management
   const [paymentMethods, setPaymentMethods] = useState([
-    { name: "Bizum", details: "" }
+    { name: "Pago Móvil", details: "" }
   ]);
 
+  if (!user) {
+    return (
+      <AuthModal 
+        onClose={() => navigate("/")} 
+        onSuccess={() => {
+          const u = JSON.parse(localStorage.getItem("df_user"));
+          setUser(u);
+          setOrganizerName(u.name);
+          setOrganizerEmail(u.email);
+          setOrganizerPhone(u.phone);
+        }} 
+      />
+    );
+  }
+
   const handleAddPaymentMethod = () => {
-    setPaymentMethods([...paymentMethods, { name: "Bizum", details: "" }]);
+    setPaymentMethods([...paymentMethods, { name: "Pago Móvil", details: "" }]);
   };
 
   const handleRemovePaymentMethod = (index) => {
@@ -570,11 +587,8 @@ export default function CreateCampaign() {
                           onChange={(e) => handlePaymentMethodChange(idx, "name", e.target.value)}
                           className="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-xs outline-none bg-white font-semibold"
                         >
-                          <option value="Bizum">Bizum</option>
-                          <option value="PayPal">PayPal</option>
-                          <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-                          <option value="Crypto">Criptomonedas</option>
-                          <option value="Efectivo/Punto Físico">Efectivo / Entrega Física</option>
+                          <option value="Pago Móvil">Pago Móvil (Venezuela)</option>
+                          <option value="Transferencia Bancaria">Transferencia Bancaria (Venezuela)</option>
                         </select>
                       </div>
 
@@ -583,7 +597,7 @@ export default function CreateCampaign() {
                         <input
                           type="text"
                           required
-                          placeholder={pm.name === "Bizum" ? "+34 600 000 000" : pm.name === "PayPal" ? "mi_correo@paypal.com" : "IBAN ES21..."}
+                          placeholder={pm.name === "Pago Móvil" ? "Banesco, 0414-1234567, V-12345678" : "Provincial, Cuenta Corriente: 0108-..."}
                           value={pm.details}
                           onChange={(e) => handlePaymentMethodChange(idx, "details", e.target.value)}
                           className="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-xs outline-none font-semibold"

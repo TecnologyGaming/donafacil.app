@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { mockDb } from "../mock";
 import { useToast } from "../hooks/use-toast";
-import { Shield, Sparkles, CreditCard, ToggleLeft, ToggleRight, Check, X, AlertTriangle, ArrowUpRight, CheckCircle2, MessageSquare, TrendingUp, HelpCircle } from "lucide-react";
+import { db } from "../firebase";
+import { collection, onSnapshot, doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { Shield, Sparkles, CreditCard, ToggleLeft, ToggleRight, Check, X, AlertTriangle, ArrowUpRight, CheckCircle2, MessageSquare, TrendingUp, HelpCircle, Send } from "lucide-react";
 
 export default function AdminPanel() {
   const { toast } = useToast();
@@ -19,11 +21,24 @@ export default function AdminPanel() {
   const [baseDonations, setBaseDonations] = useState("860");
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
+  // Global Mandatory Payment Settings
+  const [zelleEmail, setZelleEmail] = useState("zelle@donafacil.app");
+  const [binanceId, setBinanceId] = useState("123456789");
+  const [stripeKey, setStripeKey] = useState("pk_live_donafacil_123");
+  const [zelleActive, setZelleActive] = useState(true);
+  const [binanceActive, setBinanceActive] = useState(true);
+  const [stripeActive, setStripeActive] = useState(true);
+
   // Admin Login States
   const [isAdminLogged, setIsAdminLogged] = useState(localStorage.getItem("df_admin_logged") === "true");
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState("");
+
+  // Real-Time Chat Support States
+  const [conversations, setConversations] = useState([]);
+  const [selectedChatId, setSelectedChatId] = useState("");
+  const [adminChatInput, setAdminChatInput] = useState("");
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
@@ -59,6 +74,12 @@ export default function AdminPanel() {
         setBaseRaised(settings.baseRaised.toString());
         setBaseCampaigns(settings.baseCampaigns.toString());
         setBaseDonations(settings.baseDonations.toString());
+        setZelleEmail(settings.zelleEmail || "zelle@donafacil.app");
+        setBinanceId(settings.binanceId || "123456789");
+        setStripeKey(settings.stripeKey || "pk_live_donafacil_123");
+        setZelleActive(settings.zelleActive !== undefined ? settings.zelleActive : true);
+        setBinanceActive(settings.binanceActive !== undefined ? settings.binanceActive : true);
+        setStripeActive(settings.stripeActive !== undefined ? settings.stripeActive : true);
       }
     } catch (e) {
       console.error(e);
@@ -72,13 +93,19 @@ export default function AdminPanel() {
       const success = await mockDb.updateSiteSettings({
         baseRaised,
         baseCampaigns,
-        baseDonations
+        baseDonations,
+        zelleEmail,
+        binanceId,
+        stripeKey,
+        zelleActive,
+        binanceActive,
+        stripeActive
       });
       setIsSavingSettings(false);
       if (success) {
         toast({
           title: "Configuración Guardada",
-          description: "Los valores base del contador han sido actualizados en la portada.",
+          description: "Los valores base y canales de cobro obligatorios han sido actualizados.",
         });
       }
     } catch (err) {
@@ -101,6 +128,49 @@ export default function AdminPanel() {
     window.addEventListener("df_role_changed", handleRoleChange);
     return () => window.removeEventListener("df_role_changed", handleRoleChange);
   }, []);
+
+  useEffect(() => {
+    if (!isAdminLogged) return;
+
+    // Real-time listener for support conversations
+    const unsubscribe = onSnapshot(collection(db, "conversations"), (snapshot) => {
+      const list = [];
+      snapshot.forEach(docSnap => {
+        list.push({ ...docSnap.data(), id: docSnap.id });
+      });
+      // Sort by last message date descending
+      list.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+      setConversations(list);
+    });
+
+    return () => unsubscribe();
+  }, [isAdminLogged]);
+
+  const handleSendAdminMessage = async (e) => {
+    e.preventDefault();
+    if (!adminChatInput.trim() || !selectedChatId) return;
+
+    const msgPayload = {
+      sender: "admin",
+      text: adminChatInput.trim(),
+      timestamp: new Date().toISOString(),
+      name: "Soporte (Admin)"
+    };
+
+    setAdminChatInput("");
+
+    try {
+      const docRef = doc(db, "conversations", selectedChatId);
+      await updateDoc(docRef, {
+        messages: arrayUnion(msgPayload),
+        lastMessageAt: new Date().toISOString(),
+        unreadByAdmin: false,
+        unreadByUser: true
+      });
+    } catch (err) {
+      console.error("Error sending admin chat reply:", err);
+    }
+  };
 
   // Actions
   const handleToggleActive = async (id, title) => {
@@ -342,6 +412,14 @@ export default function AdminPanel() {
             }`}
           >
             Configuración de Portada
+          </button>
+          <button
+            onClick={() => setActiveTab("soporte")}
+            className={`pb-4 px-6 font-bold text-sm transition-all border-b-2 shrink-0 flex items-center gap-1.5 ${
+              activeTab === "soporte" ? "border-emerald-600 text-emerald-700" : "border-transparent text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            Soporte por Chat
           </button>
         </div>
 
@@ -587,68 +665,300 @@ export default function AdminPanel() {
         )}
 
         {activeTab === "configuracion" && (
-          <div className="bg-white border rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 max-w-xl text-left">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-1.5 pb-2 border-b">
-                <Sparkles className="h-5 w-5 text-emerald-600" />
-                Configurar Baselines Sociales (Portada)
-              </h2>
-              <p className="text-xs text-gray-400 mt-1">
-                Modifica los valores base (social proof offsets) que se muestran en el contador principal de la página de inicio. El sistema les sumará las donaciones y campañas reales de forma automática.
-              </p>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Form Column */}
+            <div className="lg:col-span-8 bg-white border rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 text-left">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-1.5 pb-2 border-b">
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                  Configurar Baselines y Canales Obligatorios del Portal
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">
+                  Gestiona los valores del contador de la portada y los datos de cobro oficiales (Zelle, Stripe, Binance) de la plataforma.
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveSettings} className="space-y-6">
+                
+                {/* Section 1: Baselines */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-extrabold text-slate-800 border-l-4 border-emerald-500 pl-2">
+                    1. Estadísticas de Portada (Baselines)
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Recaudado Base Inicial (€)</label>
+                      <input
+                        type="number"
+                        required
+                        value={baseRaised}
+                        onChange={(e) => setBaseRaised(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold outline-none mt-1 focus:ring-2 focus:ring-emerald-500/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Campañas Activas Base</label>
+                      <input
+                        type="number"
+                        required
+                        value={baseCampaigns}
+                        onChange={(e) => setBaseCampaigns(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold outline-none mt-1 focus:ring-2 focus:ring-emerald-500/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Donaciones Base</label>
+                      <input
+                        type="number"
+                        required
+                        value={baseDonations}
+                        onChange={(e) => setBaseDonations(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold outline-none mt-1 focus:ring-2 focus:ring-emerald-500/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Global Mandatory Payment Channels */}
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="text-sm font-extrabold text-slate-800 border-l-4 border-blue-500 pl-2">
+                    2. Canales de Cobro Obligatorios Globales (Zelle, Stripe, Binance)
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Introduce los datos oficiales de tu portal. Aparecerán en TODAS las campañas activas para captar donaciones globales.
+                  </p>
+
+                  <div className="space-y-4">
+                    {/* Zelle */}
+                    <div className="border p-4 rounded-xl bg-slate-50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-blue-700 uppercase">Zelle Global del Portal</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-gray-400">Habilitar</span>
+                          <input 
+                            type="checkbox" 
+                            checked={zelleActive} 
+                            onChange={(e) => setZelleActive(e.target.checked)}
+                            className="h-4 w-4 text-emerald-600 rounded"
+                          />
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Ej: correo@zelle.com"
+                        value={zelleEmail}
+                        onChange={(e) => setZelleEmail(e.target.value)}
+                        className="w-full border bg-white rounded-lg px-3 py-2 text-xs outline-none"
+                      />
+                    </div>
+
+                    {/* Stripe Key */}
+                    <div className="border p-4 rounded-xl bg-slate-50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-emerald-700 uppercase">Stripe API Public Key</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-gray-400">Habilitar</span>
+                          <input 
+                            type="checkbox" 
+                            checked={stripeActive} 
+                            onChange={(e) => setStripeActive(e.target.checked)}
+                            className="h-4 w-4 text-emerald-600 rounded"
+                          />
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Ej: pk_live_..."
+                        value={stripeKey}
+                        onChange={(e) => setStripeKey(e.target.value)}
+                        className="w-full border bg-white rounded-lg px-3 py-2 text-xs outline-none font-mono"
+                      />
+                    </div>
+
+                    {/* Binance ID */}
+                    <div className="border p-4 rounded-xl bg-slate-50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-yellow-700 uppercase">Binance Pay ID</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-gray-400">Habilitar</span>
+                          <input 
+                            type="checkbox" 
+                            checked={binanceActive} 
+                            onChange={(e) => setBinanceActive(e.target.checked)}
+                            className="h-4 w-4 text-emerald-600 rounded"
+                          />
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Ej: 12345678"
+                        value={binanceId}
+                        onChange={(e) => setBinanceId(e.target.value)}
+                        className="w-full border bg-white rounded-lg px-3 py-2 text-xs outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSavingSettings}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+                >
+                  {isSavingSettings ? "Guardando Configuración..." : "Guardar Cambios de Configuración"}
+                </button>
+              </form>
             </div>
 
-            <form onSubmit={handleSaveSettings} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  1. Recaudación Base Inicial (€)
-                </label>
-                <input
-                  type="number"
-                  required
-                  placeholder="30050"
-                  value={baseRaised}
-                  onChange={(e) => setBaseRaised(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-emerald-500/50"
-                />
-              </div>
+            {/* Helper Tips Column */}
+            <div className="lg:col-span-4 bg-emerald-600 text-white p-6 rounded-2xl shadow-sm space-y-4 text-left">
+              <h3 className="font-extrabold text-sm flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4" />
+                Control de Canales
+              </h3>
+              <p className="text-xs text-emerald-100 leading-relaxed">
+                Tanto **Zelle, Stripe como Binance** son procesados de forma centralizada bajo las cuentas del portal (editadas a la izquierda). 
+              </p>
+              <p className="text-xs text-emerald-100 leading-relaxed">
+                Los solicitantes solo pueden ingresar sus datos de **Pago Móvil** y **Transferencia Bancaria** locales en Venezuela, los cuales se mostrarán únicamente en su respectiva solicitud luego de que tú los audites y apruebes.
+              </p>
+            </div>
+          </div>
+        )}
 
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  2. Campañas Activas Base
-                </label>
-                <input
-                  type="number"
-                  required
-                  placeholder="5"
-                  value={baseCampaigns}
-                  onChange={(e) => setBaseCampaigns(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-emerald-500/50"
-                />
-              </div>
+        {activeTab === "soporte" && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+            
+            {/* Conversations list column */}
+            <div className="md:col-span-4 bg-white border rounded-2xl p-5 shadow-sm space-y-4 text-left">
+              <h3 className="font-extrabold text-slate-800 text-sm pb-3 border-b">
+                Chats Activos ({conversations.length})
+              </h3>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  3. Donaciones Realizadas Base
-                </label>
-                <input
-                  type="number"
-                  required
-                  placeholder="860"
-                  value={baseDonations}
-                  onChange={(e) => setBaseDonations(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-emerald-500/50"
-                />
+              <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+                {conversations.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-10">No hay chats de soporte activos en este momento.</p>
+                ) : (
+                  conversations.map((chat) => {
+                    const lastMsg = chat.messages?.[chat.messages.length - 1];
+                    const isSelected = selectedChatId === chat.id;
+                    return (
+                      <button
+                        key={chat.id}
+                        onClick={() => setSelectedChatId(chat.id)}
+                        className={`w-full text-left p-3 rounded-xl border transition-all flex flex-col gap-1 ${
+                          isSelected 
+                            ? "bg-emerald-50 border-emerald-300 shadow-sm" 
+                            : "bg-slate-50/50 hover:bg-slate-100 border-transparent"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-bold text-xs text-gray-900">{chat.userName || "Invitado"}</span>
+                          {chat.unreadByAdmin && (
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-gray-400 truncate w-full">
+                          {chat.userEmail}
+                        </p>
+                        {lastMsg && (
+                          <p className="text-[11px] text-slate-700 italic truncate w-full mt-1">
+                            "{lastMsg.text}"
+                          </p>
+                        )}
+                      </button>
+                    );
+                  })
+                )}
               </div>
+            </div>
 
-              <button
-                type="submit"
-                disabled={isSavingSettings}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
-              >
-                {isSavingSettings ? "Guardando Valores..." : "Guardar Valores Base"}
-              </button>
-            </form>
+            {/* Chat conversation details box */}
+            <div className="md:col-span-8 bg-white border rounded-2xl p-5 shadow-sm h-[560px] flex flex-col justify-between text-left">
+              {selectedChatId ? (
+                <>
+                  {/* Header info */}
+                  {(() => {
+                    const activeChat = conversations.find(c => c.id === selectedChatId);
+                    if (!activeChat) return null;
+                    return (
+                      <div className="border-b pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
+                        <div>
+                          <h4 className="font-extrabold text-slate-800 text-sm">{activeChat.userName}</h4>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            {activeChat.userEmail} • Cel: {activeChat.userPhone || "N/A"}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full uppercase">
+                          Soporte Activo
+                        </span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Messages Log */}
+                  <div className="flex-1 overflow-y-auto my-4 space-y-3 pr-1 bg-slate-50/50 p-4 rounded-xl border">
+                    {(() => {
+                      const activeChat = conversations.find(c => c.id === selectedChatId);
+                      if (!activeChat || !activeChat.messages) return null;
+                      return activeChat.messages.map((m, idx) => {
+                        const isAdmin = m.sender === "admin";
+                        return (
+                          <div 
+                            key={idx} 
+                            className={`flex flex-col ${isAdmin ? "items-end" : "items-start"}`}
+                          >
+                            <span className="text-[9px] text-gray-400 font-semibold mb-0.5">
+                              {isAdmin ? "Tú (Soporte Admin)" : m.name}
+                            </span>
+                            <div 
+                              className={`max-w-[80%] rounded-2xl p-3 text-xs leading-relaxed shadow-sm ${
+                                isAdmin 
+                                  ? "bg-emerald-600 text-white rounded-tr-none" 
+                                  : "bg-white text-slate-800 rounded-tl-none border"
+                              }`}
+                            >
+                              {m.text}
+                            </div>
+                            <span className="text-[8px] text-gray-400 mt-0.5">
+                              {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+
+                  {/* Input response form */}
+                  <form onSubmit={handleSendAdminMessage} className="flex gap-2 shrink-0 border-t pt-3">
+                    <input
+                      type="text"
+                      placeholder="Escribe una respuesta para el usuario..."
+                      value={adminChatInput}
+                      onChange={(e) => setAdminChatInput(e.target.value)}
+                      className="flex-1 text-xs border rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500/50"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1"
+                    >
+                      <Send className="h-4 w-4" /> Responder
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-3">
+                  <MessageSquare className="h-10 w-10 text-slate-300" />
+                  <p className="text-xs text-gray-400 max-w-sm">
+                    Selecciona uno de los chats de la izquierda para responder en tiempo real a tus creadores o donantes directamente desde esta consola de soporte.
+                  </p>
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 

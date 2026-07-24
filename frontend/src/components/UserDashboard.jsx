@@ -10,7 +10,7 @@ export default function UserDashboard() {
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   
   // Custom Payment Method Input
-  const [newMethodName, setNewMethodName] = useState("Bizum");
+  const [newMethodName, setNewMethodName] = useState("Pago Móvil");
   const [newMethodDetails, setNewMethodDetails] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -272,10 +272,8 @@ export default function UserDashboard() {
                         onChange={(e) => setNewMethodName(e.target.value)}
                         className="w-full border rounded-lg px-2.5 py-2 text-xs outline-none bg-white font-semibold"
                       >
-                        <option value="Bizum">Bizum</option>
-                        <option value="PayPal">PayPal</option>
-                        <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-                        <option value="Crypto">Criptomonedas</option>
+                        <option value="Pago Móvil">Pago Móvil (Venezuela)</option>
+                        <option value="Transferencia Bancaria">Transferencia Bancaria (Venezuela)</option>
                       </select>
                     </div>
 
@@ -284,7 +282,7 @@ export default function UserDashboard() {
                       <input
                         type="text"
                         required
-                        placeholder={newMethodName === "Bizum" ? "+34 600 000 000" : newMethodName === "PayPal" ? "mi_correo@paypal.com" : "IBAN ES21..."}
+                        placeholder={newMethodName === "Pago Móvil" ? "Banesco, 0414-1234567, V-12345678" : "Provincial, Cuenta Corriente: 0108-..."}
                         value={newMethodDetails}
                         onChange={(e) => setNewMethodDetails(e.target.value)}
                         className="w-full border rounded-lg px-2.5 py-2 text-xs outline-none font-semibold"

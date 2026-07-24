@@ -458,7 +458,13 @@ export const mockDb = {
         const defaults = {
           baseRaised: 30050.0,
           baseCampaigns: 5,
-          baseDonations: 860
+          baseDonations: 860,
+          zelleEmail: "zelle@donafacil.app",
+          binanceId: "123456789",
+          stripeKey: "pk_live_donafacil_123",
+          zelleActive: true,
+          binanceActive: true,
+          stripeActive: true
         };
         await setDoc(docRef, defaults);
         return defaults;
@@ -468,7 +474,13 @@ export const mockDb = {
       return {
         baseRaised: 30050.0,
         baseCampaigns: 5,
-        baseDonations: 860
+        baseDonations: 860,
+        zelleEmail: "zelle@donafacil.app",
+        binanceId: "123456789",
+        stripeKey: "pk_live_donafacil_123",
+        zelleActive: true,
+        binanceActive: true,
+        stripeActive: true
       };
     }
   },
@@ -477,11 +489,18 @@ export const mockDb = {
   updateSiteSettings: async (settingsData) => {
     try {
       const docRef = doc(db, "settings", "global");
-      await setDoc(docRef, {
+      const dataToSave = {
         baseRaised: parseFloat(settingsData.baseRaised),
         baseCampaigns: parseInt(settingsData.baseCampaigns),
-        baseDonations: parseInt(settingsData.baseDonations)
-      });
+        baseDonations: parseInt(settingsData.baseDonations),
+        zelleEmail: settingsData.zelleEmail || "zelle@donafacil.app",
+        binanceId: settingsData.binanceId || "123456789",
+        stripeKey: settingsData.stripeKey || "pk_live_donafacil_123",
+        zelleActive: settingsData.zelleActive !== undefined ? settingsData.zelleActive : true,
+        binanceActive: settingsData.binanceActive !== undefined ? settingsData.binanceActive : true,
+        stripeActive: settingsData.stripeActive !== undefined ? settingsData.stripeActive : true
+      };
+      await setDoc(docRef, dataToSave);
       return true;
     } catch (e) {
       console.error("Error updating site settings:", e);

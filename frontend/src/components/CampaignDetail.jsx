@@ -26,6 +26,15 @@ export default function CampaignDetail() {
   const [manualName, setManualName] = useState("");
   const [manualReference, setManualReference] = useState("");
 
+  const [siteSettings, setSiteSettings] = useState({
+    zelleEmail: "zelle@donafacil.app",
+    binanceId: "123456789",
+    stripeKey: "pk_live_donafacil_123",
+    zelleActive: true,
+    binanceActive: true,
+    stripeActive: true
+  });
+
   const refreshCampaign = async () => {
     try {
       const c = await mockDb.getCampaignById(id);
@@ -34,6 +43,11 @@ export default function CampaignDetail() {
         setCampaign({ ...c, donations });
       } else {
         setCampaign(null);
+      }
+      
+      const settings = await mockDb.getSiteSettings();
+      if (settings) {
+        setSiteSettings(settings);
       }
     } catch (e) {
       console.error("Error refreshing campaign:", e);
@@ -384,58 +398,82 @@ export default function CampaignDetail() {
               {/* Action Buttons */}
               <div className="space-y-3">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 text-center">
-                  Opciones de Pago Disponibles
+                  Canales Oficiales del Portal
                 </p>
 
-                {/* 1. Zelle (Primary if approved) */}
-                {approvedCustomMethods.find(m => m.name.toLowerCase() === "zelle") ? (
+                {/* 1. Zelle (Mandatory Global) */}
+                {siteSettings.zelleActive ? (
                   <button
                     onClick={() => {
-                      setSelectedMethod(approvedCustomMethods.find(m => m.name.toLowerCase() === "zelle"));
+                      setSelectedMethod({ name: "Zelle", details: siteSettings.zelleEmail });
                       setShowManualReportModal(true);
                     }}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-base py-3 rounded-xl shadow transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-xs py-3 rounded-xl shadow transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-1.5"
                   >
-                    <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
-                    Donar con Zelle (Paso 1)
+                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
+                    Zelle: {siteSettings.zelleEmail} (Primero)
                   </button>
                 ) : (
-                  <div className="text-xs text-center text-slate-400 py-1 bg-slate-50 border rounded-lg border-dashed">
-                    Zelle no disponible/aprobado
+                  <div className="text-[10px] text-center text-slate-400 py-1 bg-slate-50 border rounded-lg border-dashed">
+                    Zelle desactivado por administración
                   </div>
                 )}
 
-                {/* 2. Pago Móvil (Secondary if approved) */}
-                {approvedCustomMethods.find(m => m.name.toLowerCase().includes("movil") || m.name.toLowerCase().includes("móvil")) ? (
+                {/* 2. Binance Pay (Mandatory Global) */}
+                {siteSettings.binanceActive ? (
                   <button
                     onClick={() => {
-                      setSelectedMethod(approvedCustomMethods.find(m => m.name.toLowerCase().includes("movil") || m.name.toLowerCase().includes("móvil")));
+                      setSelectedMethod({ name: "Binance Pay", details: `Binance Pay ID: ${siteSettings.binanceId}` });
                       setShowManualReportModal(true);
                     }}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black text-base py-3 rounded-xl shadow transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-xs py-3 rounded-xl shadow transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-1.5"
                   >
-                    <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
-                    Donar con Pago Móvil (Paso 2)
+                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
+                    Binance Pay: ID {siteSettings.binanceId} (Segundo)
                   </button>
                 ) : (
-                  <div className="text-xs text-center text-slate-400 py-1 bg-slate-50 border rounded-lg border-dashed">
-                    Pago Móvil no disponible/aprobado
+                  <div className="text-[10px] text-center text-slate-400 py-1 bg-slate-50 border rounded-lg border-dashed">
+                    Binance Pay desactivado por administración
                   </div>
                 )}
 
-                {/* 3. Tarjeta de Crédito (Third) */}
-                {campaign.stripeEnabled ? (
+                {/* 3. Tarjeta de Crédito (Mandatory Global - Third) */}
+                {siteSettings.stripeActive && campaign.stripeEnabled ? (
                   <button
                     onClick={() => setShowDonateModal(true)}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base py-3 rounded-xl shadow transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-3 rounded-xl shadow transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-1.5"
                   >
-                    <CreditCard className="h-4 w-4" />
+                    <CreditCard className="h-3.5 w-3.5" />
                     Tarjeta de Crédito (Stripe - Tercero)
                   </button>
                 ) : (
-                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-2.5 text-center text-xs text-amber-800">
-                    Tarjeta de Crédito desactivada por admin
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-2 text-center text-[10px] text-amber-850">
+                    Tarjeta de Crédito desactivada
                   </div>
+                )}
+
+                {/* Section 2: Creator specific channels */}
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-4 text-center">
+                  Canales del Solicitante (Verificados)
+                </p>
+
+                {approvedCustomMethods.map((method) => (
+                  <button
+                    key={method.id}
+                    onClick={() => {
+                      setSelectedMethod(method);
+                      setShowManualReportModal(true);
+                    }}
+                    className="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs py-3 rounded-xl shadow transition-all flex items-center justify-center gap-1"
+                  >
+                    Donar vía {method.name}
+                  </button>
+                ))}
+
+                {approvedCustomMethods.length === 0 && (
+                  <p className="text-[10px] text-center text-gray-400 italic">
+                    Sin canales directos de pago móvil o transferencia aprobados.
+                  </p>
                 )}
 
                 <button
