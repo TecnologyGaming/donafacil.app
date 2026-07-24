@@ -30,7 +30,7 @@ function App() {
           <div className="container mx-auto px-4 max-w-2xl space-y-4">
             <p className="font-extrabold text-lg text-emerald-700">donafacil.app</p>
             <p className="text-xs text-slate-500 leading-relaxed">
-              La plataforma de recaudación de fondos y solidaridad para la comunidad hispana. Recauda de manera directa, transparente y segura con tarjeta de crédito (Stripe) y transferencias verificadas.
+              La plataforma de recaudación de fondos y solidaridad para la comunidad hispana. Recauda de manera directa, transparente y segura con tarjeta de crédito y transferencias verificadas.
             </p>
             <div className="bg-slate-50 border p-4 rounded-xl text-[11px] text-slate-400 text-left space-y-1.5 leading-relaxed">
               <p className="font-bold uppercase text-slate-500">Términos y Condiciones (Resumen de Seguridad):</p>
@@ -41,7 +41,10 @@ function App() {
                 **Costo de Uso de la Plataforma:** donafacil.app establece un cobro/tarifa del **5% por cada transacción o donativo realizado**. Este porcentaje se destina de forma íntegra a fondos de donación de la aplicación para apoyar directamente a otras causas de los creadores de nuestro portal que se encuentren en situaciones de alta vulnerabilidad o urgencia requerida.
               </p>
               <p>
-                **Tiempos de Desembolso:** Los fondos recaudados serán transferidos y enviados a sus respectivos destinatarios en un plazo estimado de **3 a 5 días hábiles**, derivado de las demoras de compensación y procesamiento de las pasarelas de pago asociadas (tarjeta de crédito/Stripe y Zelle).
+                **Tiempos de Desembolso:** Los fondos recaudados serán transferidos y enviados a sus respectivos destinatarios en un plazo estimado de **3 a 5 días hábiles**, derivado de las demoras de compensación y procesamiento de las pasarelas de pago asociadas (tarjeta de crédito y Zelle).
+              </p>
+              <p>
+                **Domicilio Legal:** donafacil.app se encuentra constituida, registrada y domiciliada de forma oficial en **Miami, Florida, Estados Unidos**.
               </p>
             </div>
             <p className="text-[11px] text-slate-300">© 2025 donafacil.app. Todos los derechos reservados.</p>

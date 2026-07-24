@@ -257,11 +257,14 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✓ RE-VERIFIED (User Request): Terms and Conditions block on mobile viewport (375x667). CONFIRMED BOTH REQUIRED TEXTS: (1) 5% transaction fee text: 'donafacil.app establece un cobro/tarifa del **5% por cada transacción o donativo realizado**' ✓, (2) 3-5 days payout text: 'Los fondos recaudados serán transferidos y enviados a sus respectivos destinatarios en un plazo estimado de **3 a 5 días hábiles**' ✓. Terms and Conditions block contains 1215 characters total. Both texts are clearly visible in the footer. All verification tests passed successfully."
+      - working: true
+        agent: "testing"
+        comment: "✓ VIEWPORT TEST (User Request): Terms and Conditions verified on desktop viewport (1920x1080). CONFIRMED: (1) 'Miami, Florida' domicile clause is PRESENT: '**Domicilio Legal:** donafacil.app se encuentra constituida, registrada y domiciliada de forma oficial en **Miami, Florida, Estados Unidos**.' ✓, (2) The word 'Stripe' does NOT appear in the Terms and Conditions text ✓. The text mentions 'tarjeta de crédito' (credit card) and 'Zelle' but correctly avoids mentioning 'Stripe' explicitly. Terms and Conditions text is 1343 characters total. All viewport test requirements passed successfully."
 
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 6
+  test_sequence: 7
   run_ui: false
 
 test_plan:
@@ -292,3 +295,5 @@ agent_communication:
     message: "UPGRADED mobile viewport z-index and backdrop-blur RE-VERIFICATION complete. Tested Register Modal on mobile viewport (375x667). CONFIRMED UPGRADES: Modal wrapper now has z-index: 9999 (z-[9999] class present, computed z-index: 9999), backdrop-blur-lg class is present and applied as blur(16px) in computed styles - UPGRADED from previous blur(12px). Modal floats cleanly on top of ALL headers and elements with maximum priority using fixed positioning (inset-0). Terms and Conditions block in footer verified to contain BOTH the 5% transaction fee text AND the NEW '3 a 5 días hábiles' payout text in the 'Tiempos de Desembolso' section. All upgraded requirements from user request have been successfully verified and are working correctly."
   - agent: "testing"
     message: "User-requested mobile responsive re-verification complete (375x667 viewport). ALL REQUIREMENTS CONFIRMED: ✅ Register Modal wrapper has z-index: 9999 (z-[9999] class present, computed z-index: 9999), ✅ backdrop-blur-lg class present and applied as blur(16px), ✅ Modal floats cleanly on top of all headers and elements with fixed positioning, ✅ Terms and Conditions block contains BOTH the 5% transaction fee text ('5% por cada transacción o donativo realizado') AND the 3-5 days payout text ('3 a 5 días hábiles'). All tests passed successfully. No issues found."
+  - agent: "testing"
+    message: "Viewport test complete on desktop (1920x1080). User requested verification of Terms and Conditions footer content. CONFIRMED: ✅ 'Miami, Florida' domicile clause is PRESENT in the Terms and Conditions ('**Domicilio Legal:** donafacil.app se encuentra constituida, registrada y domiciliada de forma oficial en **Miami, Florida, Estados Unidos**.'), ✅ The word 'Stripe' does NOT appear anywhere in the Terms and Conditions text (text mentions 'tarjeta de crédito' and 'Zelle' but correctly avoids 'Stripe'). Terms text is 1343 characters total. All viewport test requirements passed successfully."

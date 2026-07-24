@@ -71,7 +71,7 @@ export default function Home() {
               </h1>
               
               <p className="text-lg text-gray-600 max-w-xl">
-                Crea una campaña gratuita en minutos, comparte tu historia y recibe el apoyo directo de amigos, familiares y donantes solidarios con Stripe y métodos personalizados.
+                Crea una campaña gratuita en minutos, comparte tu historia y recibe el apoyo directo de amigos, familiares y donantes solidarios con tarjeta de crédito y métodos personalizados.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
@@ -170,7 +170,7 @@ export default function Home() {
               Explorar causas activas
             </h2>
             <p className="text-gray-500 text-sm mt-1 text-left">
-              Apoya de forma segura con Stripe o consulta métodos personalizados aprobados
+              Apoya de forma segura con Tarjeta de Crédito o consulta métodos personalizados aprobados
             </p>
           </div>
 
@@ -290,7 +290,7 @@ export default function Home() {
             </div>
             <h3 className="font-bold text-gray-900 text-lg">Donaciones Seguras</h3>
             <p className="text-sm text-gray-500">
-              Protegemos a donantes y recaudadores con altos estándares de seguridad cibernética a través de Stripe y verificación.
+              Protegemos a donantes y recaudadores con altos estándares de seguridad cibernética a través de Tarjeta de Crédito y verificación.
             </p>
           </div>
 

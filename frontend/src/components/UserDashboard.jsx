@@ -338,7 +338,7 @@ export default function UserDashboard() {
 
                   {(!selectedCampaign.customPaymentMethods || selectedCampaign.customPaymentMethods.length === 0) && (
                     <div className="col-span-2 text-center py-6 text-sm text-gray-500 border border-dashed rounded-xl bg-slate-50/50">
-                      No has añadido canales de cobro personalizados. Los donantes solo podrán pagar con tarjeta de crédito Stripe global.
+                      No has añadido canales de cobro personalizados. Los donantes solo podrán pagar con tarjeta de crédito global.
                     </div>
                   )}
                 </div>

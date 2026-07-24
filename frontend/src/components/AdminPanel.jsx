@@ -194,8 +194,8 @@ export default function AdminPanel() {
       await loadData();
       if (updated) {
         toast({
-          title: updated.stripeEnabled ? "Stripe Habilitado" : "Stripe Deshabilitado",
-          description: `Pasarela Stripe para "${title}" ahora está ${updated.stripeEnabled ? "ENCENDIDA" : "APAGADA"}.`,
+          title: updated.stripeEnabled ? "Tarjeta de Crédito Habilitada" : "Tarjeta de Crédito Deshabilitada",
+          description: `Pasarela de Tarjeta de Crédito para "${title}" ahora está ${updated.stripeEnabled ? "ENCENDIDA" : "APAGADA"}.`,
         });
       }
     } catch (e) {
@@ -438,7 +438,7 @@ export default function AdminPanel() {
                     <th className="p-4">Campaña / Organizador</th>
                     <th className="p-4">Categoría</th>
                     <th className="p-4">Recaudado / Meta</th>
-                    <th className="p-4 text-center">Stripe (Tarjeta Global)</th>
+                    <th className="p-4 text-center">Tarjeta de Crédito (Global)</th>
                     <th className="p-4 text-center">Estado Solicitud</th>
                     <th className="p-4 text-right">Detalle</th>
                   </tr>
@@ -758,7 +758,7 @@ export default function AdminPanel() {
                     {/* Stripe Key */}
                     <div className="border p-4 rounded-xl bg-slate-50 space-y-3">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-emerald-700 uppercase">Stripe API Public Key</label>
+                        <label className="text-xs font-bold text-emerald-700 uppercase">Clave Pública de Tarjeta de Crédito</label>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-bold text-gray-400">Habilitar</span>
                           <input 
@@ -820,7 +820,7 @@ export default function AdminPanel() {
                 Control de Canales
               </h3>
               <p className="text-xs text-emerald-100 leading-relaxed">
-                Tanto **Zelle, Stripe como Binance** son procesados de forma centralizada bajo las cuentas del portal (editadas a la izquierda). 
+                Tanto **Zelle, Tarjeta de Crédito como Binance** son procesados de forma centralizada bajo las cuentas del portal (editadas a la izquierda). 
               </p>
               <p className="text-xs text-emerald-100 leading-relaxed">
                 Los solicitantes solo pueden ingresar sus datos de **Pago Móvil** y **Transferencia Bancaria** locales en Venezuela, los cuales se mostrarán únicamente en su respectiva solicitud luego de que tú los audites y apruebes.

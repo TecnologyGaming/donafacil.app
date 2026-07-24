@@ -521,7 +521,7 @@ export default function CampaignDetail() {
             <div className="bg-emerald-600 text-white p-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                <span className="font-extrabold text-lg">Donar con Stripe</span>
+                <span className="font-extrabold text-lg">Donar con Tarjeta de Crédito</span>
               </div>
               <button
                 onClick={() => setShowDonateModal(false)}
@@ -572,7 +572,7 @@ export default function CampaignDetail() {
               {/* Stripe Card Elements Mockup */}
               <div className="border border-slate-100 p-4 rounded-xl bg-slate-50 space-y-3">
                 <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
-                  <Shield className="h-3 w-3" /> Pasarela Segura de Stripe (PRUEBA)
+                  <Shield className="h-3 w-3" /> Pasarela Segura de Tarjeta de Crédito (PRUEBA)
                 </p>
 
                 <div className="space-y-2">
