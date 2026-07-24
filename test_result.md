@@ -165,6 +165,17 @@ backend:
         comment: "✓ TESTED: All admin endpoints working correctly. PATCH /api/admin/campaigns/{id}/toggle-active toggles campaign visibility. PATCH /api/admin/campaigns/{id}/toggle-stripe toggles Stripe payment option. POST /api/admin/campaigns/{id}/approve-payment/{method_id} approves/rejects custom payment methods. GET /api/admin/stats returns correct statistics. GET /api/admin/donations returns all donations."
 
 frontend:
+  - task: "Navbar responsive logo visibility"
+    implemented: true
+    working: true
+    file: "frontend/src/components/Navbar.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: Mobile responsive logo visibility verified on viewport 375x667. Logo text 'donafacil.app' is FULLY VISIBLE next to heart icon. Logo text classes: 'font-bold text-xl inline-block tracking-tight text-emerald-700' - does NOT contain 'hidden' class. Logo has visible dimensions (width=99.41px, height=28.00px) with CSS display: block, visibility: visible, opacity: 1. Tested across multiple mobile screen sizes (320px, 375px, 390px) - logo remains visible on all. The 'hidden sm:inline-block' responsive bug has been COMPLETELY RESOLVED."
   - task: "GoFundMe landing page"
     implemented: true
     working: true
@@ -234,3 +245,5 @@ agent_communication:
     message: "Admin Panel testing complete. The 'Link is not defined' ReferenceError has been fully resolved. All statistics render correctly, campaigns table displays 4 active campaigns with proper data, and all navigation tabs are functional. Link component from react-router-dom is working correctly throughout the Admin Panel. Ready to test remaining frontend components (Home, CampaignDetail, CreateCampaign)."
   - agent: "testing"
     message: "organizerPhone field testing complete. All 14 backend tests passed successfully. Verified that POST /api/campaigns correctly accepts 'organizerPhone' in the payload and saves it as 'phone' in the 'organizer' sub-object in MongoDB. Tested both scenarios: (1) Campaign with organizerPhone provided - correctly saved with the provided phone number, (2) Campaign without organizerPhone - correctly defaults to 'N/A'. The endpoint returns 200 OK with proper organizer structure containing name, email, and phone fields."
+  - agent: "testing"
+    message: "Mobile responsive logo visibility testing complete. Verified on mobile viewport (375x667) that the 'donafacil.app' logo text is fully visible next to the heart icon in the Navbar. The 'hidden sm:inline-block' responsive bug has been completely resolved. Logo text now uses 'inline-block' class without any 'hidden' class, making it visible across all mobile screen sizes tested (320px, 375px, 390px). Logo has proper dimensions (99.41px × 28.00px) and CSS properties (display: block, visibility: visible, opacity: 1)."

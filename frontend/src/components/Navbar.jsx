@@ -71,7 +71,7 @@ export default function Navbar() {
         <div className="flex items-center gap-6 md:gap-10">
           <Link to="/" className="flex items-center space-x-2">
             <Heart className="h-6 w-6 text-emerald-600 fill-emerald-500 animate-pulse" />
-            <span className="hidden font-bold text-xl sm:inline-block tracking-tight text-emerald-700">
+            <span className="font-bold text-xl inline-block tracking-tight text-emerald-700">
               donafacil<span className="text-gray-500 text-sm font-normal">.app</span>
             </span>
           </Link>
