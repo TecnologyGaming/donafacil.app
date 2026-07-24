@@ -75,8 +75,8 @@ export default function AuthModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-md z-[1000] overflow-y-auto p-4 flex justify-center items-center text-left font-sans">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-sm sm:max-w-md w-full border p-6 sm:p-8 my-auto space-y-6 relative">
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-lg z-[9999] overflow-y-auto p-3 sm:p-4 flex justify-center items-start sm:items-center text-left font-sans">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-sm sm:max-w-md w-full border p-4 sm:p-8 my-auto space-y-5 relative">
         
         {/* Close Button */}
         {onClose && (
@@ -107,7 +107,7 @@ export default function AuthModal({ onClose, onSuccess }) {
           
           {isRegister && (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 uppercase">Nombre</label>
                   <div className="relative mt-1">

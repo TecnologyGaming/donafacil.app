@@ -234,7 +234,10 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✓ TESTED: Register Modal z-index and backdrop-blur verification on mobile viewport (375x667). Modal wrapper has correct z-index: 1000 (>= 1000 requirement met). Modal wrapper classes confirmed: 'fixed inset-0 bg-slate-900/75 backdrop-blur-md z-[1000] overflow-y-auto p-4 flex justify-center items-center text-left font-sans'. backdrop-blur-md class is present and applied in computed styles as blur(12px). z-[1000] class is present. Modal is positioned fixed with inset-0, ensuring it floats cleanly on top of all headers and elements. Modal content dimensions: 343px × 636.5px. All styling requirements verified and working correctly."
-  - task: "Terms and Conditions with 5% Transaction Fee"
+      - working: true
+        agent: "testing"
+        comment: "✓ RE-TESTED: Register Modal z-index and backdrop-blur UPGRADED verification on mobile viewport (375x667). Modal wrapper now has UPGRADED z-index: 9999 (z-[9999] class present). Modal wrapper classes confirmed: 'fixed inset-0 bg-slate-900/80 backdrop-blur-lg z-[9999] overflow-y-auto p-3 sm:p-4 flex justify-center items-start sm:items-center text-left font-sans'. backdrop-blur-lg class is present and applied in computed styles as blur(16px) - UPGRADED from blur(12px). Computed z-index: 9999 (>= 9999 requirement met). Modal is positioned fixed with inset-0, ensuring it floats cleanly on top of ALL headers and elements with maximum priority. All upgraded styling requirements verified and working correctly."
+  - task: "Terms and Conditions with 5% Transaction Fee and 3-5 Days Payout"
     implemented: true
     working: true
     file: "frontend/src/App.js"
@@ -245,6 +248,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✓ TESTED: Terms and Conditions block in footer contains the 5% transaction fee text. Verified on mobile viewport (375x667). Footer Terms and Conditions block exists and is visible. Text content confirmed: 'donafacil.app establece un cobro/tarifa del **5% por cada transacción o donativo realizado**. Este porcentaje se destina de forma íntegra a fondos de donación de la aplicación para apoyar directamente a otras causas de los creadores de nuestro portal que se encuentren en situaciones de alta vulnerabilidad o urgencia requerida.' Full Terms and Conditions block is 923 characters long and properly formatted in the footer. All requirements met."
+      - working: true
+        agent: "testing"
+        comment: "✓ RE-TESTED: Terms and Conditions block UPDATED with 3-5 days payout text. Verified on mobile viewport (375x667). Footer Terms and Conditions block is visible with 1215 characters total. CONFIRMED: 'Tiempos de Desembolso' section is present with text: 'Los fondos recaudados serán transferidos y enviados a sus respectivos destinatarios en un plazo estimado de **3 a 5 días hábiles**, derivado de las demoras de compensación y procesamiento de las pasarelas de pago asociadas (tarjeta de crédito/Stripe y Zelle).' The 5% transaction fee text is also present. Both payout timeline and transaction fee information are correctly displayed in the footer. All requirements met."
 
 metadata:
   created_by: "main_agent"
@@ -276,3 +282,5 @@ agent_communication:
     message: "Register Modal mobile responsive testing complete. Tested on mobile viewport (375x667) as requested. Modal opens successfully, is fully scrollable (scrollHeight: 733px with overflow-y-auto), and all form fields are accessible without clipping. Successfully tested all inputs (Name, Surname, Phone, Email, Password), submit button, and close functionality. Modal dimensions (343px × 636.5px) fit within viewport. All elements positioned correctly and user can view complete form and dismiss it without any issues. No critical issues found - modal is fully functional on mobile."
   - agent: "testing"
     message: "Mobile viewport z-index and backdrop-blur verification complete. Tested Register Modal on mobile viewport (375x667). CONFIRMED: Modal wrapper has z-index: 1000 (>= 1000 requirement met), z-[1000] class is present, backdrop-blur-md class is present and applied as blur(12px) in computed styles. Modal floats cleanly on top of all headers and elements with fixed positioning (inset-0). Terms and Conditions block in footer verified to contain the 5% transaction fee text: 'donafacil.app establece un cobro/tarifa del **5% por cada transacción o donativo realizado**'. All requirements from user request have been successfully verified and are working correctly."
+  - agent: "testing"
+    message: "UPGRADED mobile viewport z-index and backdrop-blur RE-VERIFICATION complete. Tested Register Modal on mobile viewport (375x667). CONFIRMED UPGRADES: Modal wrapper now has z-index: 9999 (z-[9999] class present, computed z-index: 9999), backdrop-blur-lg class is present and applied as blur(16px) in computed styles - UPGRADED from previous blur(12px). Modal floats cleanly on top of ALL headers and elements with maximum priority using fixed positioning (inset-0). Terms and Conditions block in footer verified to contain BOTH the 5% transaction fee text AND the NEW '3 a 5 días hábiles' payout text in the 'Tiempos de Desembolso' section. All upgraded requirements from user request have been successfully verified and are working correctly."
