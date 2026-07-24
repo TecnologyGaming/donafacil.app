@@ -28,8 +28,12 @@
         
         <!-- Crisp Live Chat Integration (donafacil.app) -->
         <script type="text/javascript">
-          window.$crisp=[];window.CRISP_WEBSITE_ID="674d8b6c-e5d0-40db-9ba7-d3eb47db0933"; // Reemplaza esto con tu Website ID de Crisp (Gratuito)
-          (function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();
+          // Solo cargar Crisp si se proporciona un Website ID válido en el .env
+          var crispId = "%REACT_APP_CRISP_WEBSITE_ID%";
+          if (crispId && crispId !== "%" + "REACT_APP_CRISP_WEBSITE_ID" + "%" && crispId !== "") {
+            window.$crisp=[];window.CRISP_WEBSITE_ID=crispId;
+            (function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();
+          }
         </script>
     </head>
     <body>

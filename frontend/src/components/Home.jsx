@@ -12,11 +12,15 @@ export default function Home() {
   const [campaigns, setCampaigns] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("Todas");
   const [searchQuery, setSearchQuery] = useState(searchQ);
+  const [siteSettings, setSiteSettings] = useState({ baseRaised: 30050, baseCampaigns: 5, baseDonations: 860 });
   
   const loadCampaigns = async () => {
     try {
       const activeCampaigns = await mockDb.getActiveCampaigns(selectedCategory, searchQuery);
       setCampaigns(activeCampaigns);
+      
+      const settings = await mockDb.getSiteSettings();
+      setSiteSettings(settings);
     } catch (e) {
       console.error("Error loading campaigns:", e);
     }
@@ -42,9 +46,10 @@ export default function Home() {
   const filteredCampaigns = campaigns;
 
   // Calculate totals for stats
-  const totalRaised = campaigns.reduce((acc, c) => acc + c.current, 0);
+  const totalRaised = (siteSettings.baseRaised || 30050) + campaigns.reduce((acc, c) => acc + c.current, 0);
   const totalGoal = campaigns.reduce((acc, c) => acc + c.goal, 0);
-  const totalDonors = campaigns.reduce((acc, c) => acc + Math.round(c.current / 35), 0) || 15;
+  const totalCampaignsCount = (siteSettings.baseCampaigns || 5) + campaigns.length;
+  const totalDonors = (siteSettings.baseDonations || 860) + campaigns.reduce((acc, c) => acc + Math.round(c.current / 35), 0);
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-16">
@@ -95,7 +100,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-2xl sm:text-3xl font-extrabold text-emerald-700">
-                    {campaigns.length}
+                    {totalCampaignsCount}
                   </p>
                   <p className="text-xs sm:text-sm font-medium text-gray-500">Campañas activas</p>
                 </div>

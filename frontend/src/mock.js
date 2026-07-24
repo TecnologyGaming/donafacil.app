@@ -292,7 +292,7 @@ export const mockDb = {
         current: 0.0,
         description: campaignData.description,
         images: (campaignData.images || []).slice(0, 3),
-        isActive: true,
+        isActive: false,
         stripeEnabled: true,
         cedulaImage: campaignData.cedulaImage || "N/A",
         selfieImage: campaignData.selfieImage || "N/A",
@@ -444,6 +444,48 @@ export const mockDb = {
     } catch (e) {
       console.error("Error adding custom payment method:", e);
       throw e;
+    }
+  },
+
+  // Get Site Settings (Counters baseline)
+  getSiteSettings: async () => {
+    try {
+      const docRef = doc(db, "settings", "global");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data();
+      } else {
+        const defaults = {
+          baseRaised: 30050.0,
+          baseCampaigns: 5,
+          baseDonations: 860
+        };
+        await setDoc(docRef, defaults);
+        return defaults;
+      }
+    } catch (e) {
+      console.error("Error getting site settings:", e);
+      return {
+        baseRaised: 30050.0,
+        baseCampaigns: 5,
+        baseDonations: 860
+      };
+    }
+  },
+
+  // Update Site Settings
+  updateSiteSettings: async (settingsData) => {
+    try {
+      const docRef = doc(db, "settings", "global");
+      await setDoc(docRef, {
+        baseRaised: parseFloat(settingsData.baseRaised),
+        baseCampaigns: parseInt(settingsData.baseCampaigns),
+        baseDonations: parseInt(settingsData.baseDonations)
+      });
+      return true;
+    } catch (e) {
+      console.error("Error updating site settings:", e);
+      return false;
     }
   }
 };

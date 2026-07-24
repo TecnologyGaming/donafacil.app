@@ -13,6 +13,12 @@ export default function AdminPanel() {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [selectedCampaignForVerify, setSelectedCampaignForVerify] = useState(null);
 
+  // Editable Baselines Settings States
+  const [baseRaised, setBaseRaised] = useState("30050");
+  const [baseCampaigns, setBaseCampaigns] = useState("5");
+  const [baseDonations, setBaseDonations] = useState("860");
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
   // Admin Login States
   const [isAdminLogged, setIsAdminLogged] = useState(localStorage.getItem("df_admin_logged") === "true");
   const [loginUser, setLoginUser] = useState("");
@@ -47,8 +53,42 @@ export default function AdminPanel() {
     try {
       const data = await mockDb.getCampaigns();
       setCampaigns(data);
+      
+      const settings = await mockDb.getSiteSettings();
+      if (settings) {
+        setBaseRaised(settings.baseRaised.toString());
+        setBaseCampaigns(settings.baseCampaigns.toString());
+        setBaseDonations(settings.baseDonations.toString());
+      }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    setIsSavingSettings(true);
+    try {
+      const success = await mockDb.updateSiteSettings({
+        baseRaised,
+        baseCampaigns,
+        baseDonations
+      });
+      setIsSavingSettings(false);
+      if (success) {
+        toast({
+          title: "Configuración Guardada",
+          description: "Los valores base del contador han sido actualizados en la portada.",
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setIsSavingSettings(false);
+      toast({
+        title: "Error al guardar",
+        description: "No se pudieron actualizar los valores.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -295,6 +335,14 @@ export default function AdminPanel() {
           >
             Historial de Donaciones ({allDonations.length})
           </button>
+          <button
+            onClick={() => setActiveTab("configuracion")}
+            className={`pb-4 px-6 font-bold text-sm transition-all border-b-2 shrink-0 flex items-center gap-1.5 ${
+              activeTab === "configuracion" ? "border-emerald-600 text-emerald-700" : "border-transparent text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            Configuración de Portada
+          </button>
         </div>
 
         {/* Tab Contents */}
@@ -535,6 +583,72 @@ export default function AdminPanel() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {activeTab === "configuracion" && (
+          <div className="bg-white border rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 max-w-xl text-left">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-1.5 pb-2 border-b">
+                <Sparkles className="h-5 w-5 text-emerald-600" />
+                Configurar Baselines Sociales (Portada)
+              </h2>
+              <p className="text-xs text-gray-400 mt-1">
+                Modifica los valores base (social proof offsets) que se muestran en el contador principal de la página de inicio. El sistema les sumará las donaciones y campañas reales de forma automática.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveSettings} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  1. Recaudación Base Inicial (€)
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="30050"
+                  value={baseRaised}
+                  onChange={(e) => setBaseRaised(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  2. Campañas Activas Base
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="5"
+                  value={baseCampaigns}
+                  onChange={(e) => setBaseCampaigns(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  3. Donaciones Realizadas Base
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="860"
+                  value={baseDonations}
+                  onChange={(e) => setBaseDonations(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSavingSettings}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+              >
+                {isSavingSettings ? "Guardando Valores..." : "Guardar Valores Base"}
+              </button>
+            </form>
           </div>
         )}
 
