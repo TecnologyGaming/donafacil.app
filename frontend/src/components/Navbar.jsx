@@ -161,9 +161,10 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-full border border-emerald-100 transition-all"
+                className="text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 sm:px-4 py-2 rounded-full border border-emerald-100 transition-all shrink-0"
               >
-                Ingresar / Registrarse
+                <span className="sm:hidden">Ingresar</span>
+                <span className="hidden sm:inline">Ingresar / Registrarse</span>
               </button>
             </div>
           )}
