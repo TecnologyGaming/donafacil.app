@@ -4,6 +4,37 @@ import { mockDb } from "../mock";
 import { useToast } from "../hooks/use-toast";
 import { Heart, Share2, Shield, Calendar, Users, CheckCircle2, AlertCircle, CreditCard, ChevronLeft, ChevronRight, MessageSquare, Plus } from "lucide-react";
 
+const CopyableValue = ({ value, label }) => {
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div 
+      onClick={handleCopy}
+      className="flex items-center justify-between gap-2 bg-white hover:bg-slate-50 border px-3 py-2 rounded-lg cursor-pointer transition-all group mt-2"
+      title="Haga clic para copiar al portapapeles"
+    >
+      <div className="overflow-hidden">
+        {label && <span className="block text-[8px] text-gray-400 uppercase font-bold">{label}</span>}
+        <p className="font-mono text-xs text-gray-800 font-bold break-all">{value}</p>
+      </div>
+      <div className="shrink-0 p-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-500 group-hover:text-emerald-600 transition-colors">
+        {copied ? (
+          <span className="text-[9px] text-emerald-600 font-extrabold px-1">¡Copiado!</span>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function CampaignDetail() {
   const { id } = useParams();
   const { toast } = useToast();
@@ -322,9 +353,7 @@ export default function CampaignDetail() {
                         <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-100/50 px-2.5 py-1 rounded-full">
                           {method.name}
                         </span>
-                        <p className="font-mono text-sm text-gray-800 font-semibold break-all mt-2.5">
-                          {method.details}
-                        </p>
+                        <CopyableValue value={method.details} />
                       </div>
                       <button
                         onClick={() => {
@@ -660,11 +689,9 @@ export default function CampaignDetail() {
             {/* Instruction Box */}
             <div className="bg-emerald-50 p-4 border-b border-emerald-100 text-sm text-emerald-800">
               <p className="font-semibold mb-1">Por favor realiza la transferencia primero a:</p>
-              <p className="font-mono bg-white p-2 border border-emerald-200 rounded text-xs font-bold break-all">
-                {selectedMethod.details}
-              </p>
+              <CopyableValue value={selectedMethod.details} />
               <p className="text-xs text-gray-500 mt-2">
-                Una vez completado el pago por tu app de Bizum o Banco, reporta los datos abajo para registrarlo en el sistema.
+                Una vez completado el pago por tu app de Banco o Proveedor, reporta los datos abajo para registrarlo en el sistema.
               </p>
             </div>
 
