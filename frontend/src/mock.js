@@ -536,5 +536,46 @@ export const mockDb = {
       console.error("Error updating site settings:", e);
       return false;
     }
+  },
+
+  // Get all registered users
+  getUsers: async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "users"));
+      const list = [];
+      snapshot.forEach(docSnap => {
+        list.push({ ...docSnap.data(), id: docSnap.id });
+      });
+      return list;
+    } catch (e) {
+      console.error("Error getting users:", e);
+      return [];
+    }
+  },
+
+  // Delete a user
+  deleteUser: async (email) => {
+    try {
+      const userRef = doc(db, "users", email);
+      await deleteDoc(userRef);
+      return true;
+    } catch (e) {
+      console.error("Error deleting user:", e);
+      return false;
+    }
+  },
+
+  // Reset a user's password
+  resetUserPassword: async (email, newPassword) => {
+    try {
+      const userRef = doc(db, "users", email);
+      await updateDoc(userRef, {
+        password: newPassword
+      });
+      return true;
+    } catch (e) {
+      console.error("Error resetting password:", e);
+      return false;
+    }
   }
 };

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { useToast } from "../hooks/use-toast";
+import { db } from "../firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { User, Mail, Phone, Lock, Heart, ShieldCheck } from "lucide-react";
 
 export default function AuthModal({ onClose, onSuccess }) {
@@ -14,7 +16,7 @@ export default function AuthModal({ onClose, onSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -26,53 +28,95 @@ export default function AuthModal({ onClose, onSuccess }) {
       return;
     }
 
-    if (isRegister) {
-      if (!name || !surname || !phone) {
+    const cleanEmail = email.trim().toLowerCase();
+
+    try {
+      if (isRegister) {
+        if (!name || !surname || !phone) {
+          toast({
+            title: "Campos vacíos",
+            description: "Por favor, completa tu nombre, apellido y teléfono celular.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Save real user document in Cloud Firestore
+        const userDocRef = doc(db, "users", cleanEmail);
+        const userPayload = {
+          name: `${name.trim()} ${surname.trim()}`,
+          email: cleanEmail,
+          phone: phone.trim(),
+          password: password
+        };
+
+        await setDoc(userDocRef, userPayload);
+
+        // Store session locally
+        localStorage.setItem("df_user", JSON.stringify({
+          name: userPayload.name,
+          email: userPayload.email,
+          phone: userPayload.phone
+        }));
+        localStorage.setItem("df_user_role", "organizer");
+        window.dispatchEvent(new Event("df_user_login"));
+        window.dispatchEvent(new Event("df_role_changed"));
+
         toast({
-          title: "Campos vacíos",
-          description: "Por favor, completa tu nombre, apellido y teléfono celular.",
-          variant: "destructive"
+          title: "¡Registro Exitoso!",
+          description: `Bienvenido(a) a donafacil.app, ${name}.`
         });
-        return;
+      } else {
+        // Real Login from Cloud Firestore
+        const userDocRef = doc(db, "users", cleanEmail);
+        const userSnap = await getDoc(userDocRef);
+
+        if (userSnap.exists()) {
+          const uData = userSnap.data();
+          if (uData.password === password) {
+            const userPayload = {
+              name: uData.name,
+              email: uData.email,
+              phone: uData.phone
+            };
+
+            localStorage.setItem("df_user", JSON.stringify(userPayload));
+            localStorage.setItem("df_user_role", "organizer");
+            window.dispatchEvent(new Event("df_user_login"));
+            window.dispatchEvent(new Event("df_role_changed"));
+
+            toast({
+              title: "Sesión Iniciada",
+              description: `Hola de nuevo, ${userPayload.name}.`
+            });
+          } else {
+            toast({
+              title: "Clave Incorrecta",
+              description: "La contraseña ingresada es incorrecta.",
+              variant: "destructive"
+            });
+            return;
+          }
+        } else {
+          toast({
+            title: "Usuario No Registrado",
+            description: "No existe una cuenta registrada con este correo.",
+            variant: "destructive"
+          });
+          return;
+        }
       }
 
-      // Save user session details
-      const userPayload = {
-        name: `${name.trim()} ${surname.trim()}`,
-        email: email.trim().toLowerCase(),
-        phone: phone.trim()
-      };
-
-      localStorage.setItem("df_user", JSON.stringify(userPayload));
-      localStorage.setItem("df_user_role", "organizer");
-      window.dispatchEvent(new Event("df_user_login"));
-      window.dispatchEvent(new Event("df_role_changed"));
-
+      if (onSuccess) onSuccess();
+      if (onClose) onClose();
+    } catch (err) {
+      console.error("Error in auth operation:", err);
       toast({
-        title: "¡Registro Exitoso!",
-        description: `Bienvenido(a) a donafacil.app, ${name}.`
-      });
-    } else {
-      // Login simulation
-      const userPayload = {
-        name: name || "Laura Martínez",
-        email: email.trim().toLowerCase(),
-        phone: phone || "+34 600 123 456"
-      };
-
-      localStorage.setItem("df_user", JSON.stringify(userPayload));
-      localStorage.setItem("df_user_role", "organizer");
-      window.dispatchEvent(new Event("df_user_login"));
-      window.dispatchEvent(new Event("df_role_changed"));
-
-      toast({
-        title: "Sesión Iniciada",
-        description: `Hola de nuevo, ${userPayload.name}.`
+        title: "Error de Autenticación",
+        description: "Hubo un problema de conexión con el servidor de autenticación.",
+        variant: "destructive"
       });
     }
-
-    if (onSuccess) onSuccess();
-    if (onClose) onClose();
   };
 
   return createPortal(

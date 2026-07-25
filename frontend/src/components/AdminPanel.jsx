@@ -40,6 +40,9 @@ export default function AdminPanel() {
   const [selectedChatId, setSelectedChatId] = useState("");
   const [adminChatInput, setAdminChatInput] = useState("");
 
+  // Registered Users State
+  const [usersList, setUsersList] = useState([]);
+
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     if (loginUser === "DONATEX" && loginPass === "Venezuela257#") {
@@ -68,6 +71,9 @@ export default function AdminPanel() {
     try {
       const data = await mockDb.getCampaigns();
       setCampaigns(data);
+
+      const users = await mockDb.getUsers();
+      setUsersList(users);
       
       const settings = await mockDb.getSiteSettings();
       if (settings) {
@@ -83,6 +89,60 @@ export default function AdminPanel() {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleDeleteCampaignAdmin = async (id, title) => {
+    if (window.confirm(`¿Estás absolutamente seguro de que quieres eliminar permanentemente la campaña "${title}"? Esta acción borrará todas sus donaciones y no se puede deshacer.`)) {
+      try {
+        await mockDb.deleteCampaign(id);
+        await loadData();
+        toast({
+          title: "Campaña Eliminada",
+          description: `Se eliminó con éxito la campaña "${title}".`,
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleDeleteUserAdmin = async (email, name) => {
+    if (window.confirm(`¿Estás absolutamente seguro de que quieres eliminar permanentemente la cuenta de "${name}" (${email})? Esta acción borrará su acceso del portal y no se puede deshacer.`)) {
+      try {
+        await mockDb.deleteUser(email);
+        await loadData();
+        toast({
+          title: "Usuario Eliminado",
+          description: `Se borró de forma definitiva la cuenta de "${name}".`,
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleResetUserPasswordAdmin = async (email, name) => {
+    const newPass = window.prompt(`Introduce la nueva contraseña para el usuario "${name}" (${email}):`);
+    if (newPass === null) return; // user cancelled
+    if (newPass.trim().length < 4) {
+      toast({
+        title: "Contraseña muy corta",
+        description: "La contraseña debe tener al menos 4 caracteres.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await mockDb.resetUserPassword(email, newPass.trim());
+      await loadData();
+      toast({
+        title: "Contraseña Restablecida",
+        description: `Se actualizó la contraseña para "${name}" con éxito.`,
+      });
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -421,6 +481,14 @@ export default function AdminPanel() {
           >
             Soporte por Chat
           </button>
+          <button
+            onClick={() => setActiveTab("usuarios")}
+            className={`pb-4 px-6 font-bold text-sm transition-all border-b-2 shrink-0 flex items-center gap-1.5 ${
+              activeTab === "usuarios" ? "border-emerald-600 text-emerald-700" : "border-transparent text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            Gestión de Usuarios
+          </button>
         </div>
 
         {/* Tab Contents */}
@@ -506,7 +574,7 @@ export default function AdminPanel() {
                         </td>
 
                         <td className="p-4 text-right">
-                          <div className="flex items-center justify-end gap-3">
+                          <div className="flex items-center justify-end gap-3 flex-wrap">
                             <button
                               onClick={() => {
                                 setSelectedCampaignForVerify(c);
@@ -522,6 +590,12 @@ export default function AdminPanel() {
                             >
                               Ver Causa <ArrowUpRight className="h-3 w-3" />
                             </Link>
+                            <button
+                              onClick={() => handleDeleteCampaignAdmin(c.id, c.title)}
+                              className="text-xs font-bold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 px-2.5 py-1.5 rounded-lg border border-rose-100 transition-all animate-pulse"
+                            >
+                              Borrar Causa
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -959,6 +1033,64 @@ export default function AdminPanel() {
               )}
             </div>
 
+          </div>
+        )}
+
+        {activeTab === "usuarios" && (
+          <div className="bg-white border rounded-2xl overflow-hidden shadow-sm">
+            <div className="p-5 border-b flex justify-between items-center bg-slate-50/50">
+              <h2 className="font-extrabold text-gray-900 text-base">Cuentas Registradas en el Portal</h2>
+              <span className="text-xs text-gray-400 font-semibold">Gestión de usuarios en tiempo real</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="border-b bg-slate-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="p-4">Usuario</th>
+                    <th className="p-4">Celular</th>
+                    <th className="p-4">Clave Actual</th>
+                    <th className="p-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y text-left">
+                  {usersList.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="p-8 text-center text-gray-400">
+                        No hay usuarios registrados en este momento.
+                      </td>
+                    </tr>
+                  ) : (
+                    usersList.map((u, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="p-4">
+                          <div className="font-bold text-gray-900">{u.name}</div>
+                          <div className="text-xs text-gray-400">{u.email}</div>
+                        </td>
+                        <td className="p-4 font-semibold text-gray-700">{u.phone}</td>
+                        <td className="p-4 font-mono text-xs text-slate-500">{u.password || "N/A"}</td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2.5">
+                            <button
+                              onClick={() => handleResetUserPasswordAdmin(u.email, u.name)}
+                              className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-all"
+                            >
+                              Restablecer Clave
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUserAdmin(u.email, u.name)}
+                              className="text-xs font-bold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 px-3 py-1.5 rounded-lg border border-rose-100 transition-all"
+                            >
+                              Borrar Cuenta
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
