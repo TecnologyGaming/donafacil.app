@@ -35,6 +35,31 @@ const CopyableValue = ({ value, label }) => {
   );
 };
 
+const renderDetailsLines = (details) => {
+  const lines = details.split(/[,/;\n\r]+/).map(l => l.trim()).filter(Boolean);
+  return (
+    <div className="space-y-1.5 mt-2 w-full text-left">
+      {lines.map((line, idx) => {
+        let label = "Dato de Pago";
+        if (line.match(/04\d{2}[-.\s]?\d{3}[-.\s]?\d{4}/) || line.match(/\+?\d{10,13}/)) {
+          label = "Número Celular";
+        } else if (line.match(/[vVeEjJgG][-.\s]?\d{5,10}/) || line.match(/^\d{7,9}$/)) {
+          label = "Cédula de Identidad";
+        } else if (line.length > 2) {
+          label = "Banco";
+        }
+        return (
+          <CopyableValue 
+            key={idx} 
+            value={line} 
+            label={label} 
+          />
+        );
+      })}
+    </div>
+  );
+};
+
 export default function UserDashboard() {
   const { toast } = useToast();
   const [campaigns, setCampaigns] = useState([]);
@@ -363,7 +388,7 @@ export default function UserDashboard() {
                           {pm.approved ? "Aprobado (Visible)" : "Pendiente de aprobación"}
                         </span>
                       </div>
-                      <CopyableValue value={pm.details} />
+                      {renderDetailsLines(pm.details)}
                     </div>
                   ))}
 

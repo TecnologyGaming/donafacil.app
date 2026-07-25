@@ -35,6 +35,32 @@ const CopyableValue = ({ value, label }) => {
   );
 };
 
+const renderDetailsLines = (details) => {
+  // Split by commas, slashes, semicolons, newlines, AND dashes (with surrounding spaces)
+  const lines = details.split(/[,/;\n\r]|\s+-\s+/).map(l => l.trim()).filter(Boolean);
+  return (
+    <div className="space-y-1.5 mt-2 w-full text-left">
+      {lines.map((line, idx) => {
+        let label = "Dato de Pago";
+        if (line.match(/04\d{2}[-.\s]?\d{3}[-.\s]?\d{4}/) || line.match(/\+?\d{10,13}/)) {
+          label = "Número Celular";
+        } else if (line.match(/[vVeEjJgG][-.\s]?\d{5,10}/) || line.match(/^\d{7,9}$/)) {
+          label = "Cédula de Identidad";
+        } else if (line.length > 2) {
+          label = "Banco";
+        }
+        return (
+          <CopyableValue 
+            key={idx} 
+            value={line} 
+            label={label} 
+          />
+        );
+      })}
+    </div>
+  );
+};
+
 export default function CampaignDetail() {
   const { id } = useParams();
   const { toast } = useToast();
@@ -353,7 +379,7 @@ export default function CampaignDetail() {
                         <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-100/50 px-2.5 py-1 rounded-full">
                           {method.name}
                         </span>
-                        <CopyableValue value={method.details} />
+                        {renderDetailsLines(method.details)}
                       </div>
                       <button
                         onClick={() => {
@@ -689,7 +715,7 @@ export default function CampaignDetail() {
             {/* Instruction Box */}
             <div className="bg-emerald-50 p-4 border-b border-emerald-100 text-sm text-emerald-800">
               <p className="font-semibold mb-1">Por favor realiza la transferencia primero a:</p>
-              <CopyableValue value={selectedMethod.details} />
+              {renderDetailsLines(selectedMethod.details)}
               <p className="text-xs text-gray-500 mt-2">
                 Una vez completado el pago por tu app de Banco o Proveedor, reporta los datos abajo para registrarlo en el sistema.
               </p>
