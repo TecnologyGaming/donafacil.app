@@ -103,7 +103,7 @@ export default function Navbar() {
         {/* User Role Switcher & Nav Actions */}
         <div className="flex items-center gap-4">
           {/* Quick Demo Switcher */}
-          <div className="flex items-center bg-muted rounded-full p-1 text-xs">
+          <div className="hidden md:flex items-center bg-muted rounded-full p-1 text-xs">
             <button
               onClick={() => handleRoleChange("donor")}
               className={`px-2.5 py-1 rounded-full transition-all ${
@@ -161,10 +161,10 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 sm:px-4 py-2 rounded-full border border-emerald-100 transition-all shrink-0"
+                className="text-xs md:text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3.5 md:px-4 py-2 rounded-full border border-emerald-100 transition-all shrink-0"
               >
-                <span className="sm:hidden">Ingresar</span>
-                <span className="hidden sm:inline">Ingresar / Registrarse</span>
+                <span className="md:hidden">Ingresar / Registrarse</span>
+                <span className="hidden md:inline">Ingresar / Registrarse</span>
               </button>
             </div>
           )}

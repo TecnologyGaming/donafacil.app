@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useToast } from "../hooks/use-toast";
 import { User, Mail, Phone, Lock, Heart, ShieldCheck } from "lucide-react";
 
@@ -74,8 +75,8 @@ export default function AuthModal({ onClose, onSuccess }) {
     if (onClose) onClose();
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-lg z-[9999] overflow-y-auto p-3 sm:p-4 flex justify-center items-start text-left font-sans">
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-lg z-[99999] overflow-y-auto p-3 sm:p-4 flex justify-center items-start text-left font-sans">
       <div className="bg-white rounded-2xl shadow-2xl max-w-sm sm:max-w-md w-full border p-4 sm:p-8 my-6 sm:my-auto space-y-5 relative">
         
         {/* Close Button */}
@@ -92,7 +93,7 @@ export default function AuthModal({ onClose, onSuccess }) {
         {/* Header */}
         <div className="text-center space-y-2">
           <Heart className="h-10 w-10 text-emerald-600 fill-emerald-500 mx-auto" />
-          <h2 className="text-2xl font-black text-gray-900">
+          <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">
             {isRegister ? "Crear Cuenta en donafacil" : "Iniciar Sesión"}
           </h2>
           <p className="text-xs text-gray-400">
@@ -206,6 +207,7 @@ export default function AuthModal({ onClose, onSuccess }) {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
