@@ -18,7 +18,6 @@ function fetchCampaignFromFirestore(campaignId) {
         try {
           const json = JSON.parse(data);
           if (json.fields) {
-            // Map Firestore REST API format to simple JS object
             const fields = json.fields;
             const campaign = {
               title: fields.title?.stringValue || "donafacil.app",
@@ -27,7 +26,6 @@ function fetchCampaignFromFirestore(campaignId) {
               organizerName: fields.organizer?.mapValue?.fields?.name?.stringValue || "Vecino Solidario"
             };
             
-            // If there's a primary image saved, let's use that
             if (fields.primaryImage?.stringValue) {
               campaign.image = fields.primaryImage.stringValue;
             }
@@ -45,10 +43,45 @@ function fetchCampaignFromFirestore(campaignId) {
   });
 }
 
-// Serve static assets first, except the root/campaign routes which we want to inject dynamically for WhatsApp
+// Serve static assets first, except raw campaign pages and image endpoints
 app.use(express.static(path.join(__dirname, 'build'), { index: false }));
 
-// Intercept Campaign Detail Route to inject Open Graph meta tags for WhatsApp previews!
+// 1. Serving raw binary images decoded from Base64 stored in Firestore!
+// This provides a valid, public absolute HTTPS link for WhatsApp crawlers!
+app.get('/api/campaign-image/:id.jpg', async (req, res) => {
+  const campaignId = req.params.id;
+  const campaign = await fetchCampaignFromFirestore(campaignId);
+  
+  if (campaign && campaign.image && campaign.image.startsWith('data:image')) {
+    try {
+      const matches = campaign.image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const contentType = matches[1];
+        const base64Data = matches[2];
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        
+        res.writeHead(200, {
+          'Content-Type': contentType,
+          'Content-Length': imageBuffer.length,
+          'Cache-Control': 'public, max-age=86400' // Cache for 24 hours
+        });
+        return res.end(imageBuffer);
+      }
+    } catch (e) {
+      console.error("Error decoding base64 image inside server:", e);
+    }
+  }
+  
+  // Fallback if it is already an external URL (Unsplash)
+  if (campaign && campaign.image && campaign.image.startsWith('http')) {
+    return res.redirect(campaign.image);
+  }
+  
+  // Default fallback image
+  res.sendFile(path.join(__dirname, 'build', 'favicon.ico'));
+});
+
+// 2. Intercept Campaign Detail Route to inject Open Graph meta tags for WhatsApp previews!
 app.get('/campaigns/:id', async (req, res) => {
   const campaignId = req.params.id;
   const indexPath = path.join(__dirname, 'build', 'index.html');
@@ -60,14 +93,17 @@ app.get('/campaigns/:id', async (req, res) => {
 
     let title = "donafacil.app | Recaudación de Fondos";
     let description = "Crea una campaña gratuita en minutos, comparte tu historia y recibe el apoyo directo de amigos, familiares y donantes con Zelle y Pago Móvil.";
-    let imageUrl = "https://img.icons8.com/color/120/000000/hearts.png";
+    
+    // Resolve dynamic host/domain to build absolute HTTPS preview links
+    const host = req.headers.host || 'donafacil.app';
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    let imageUrl = `${protocol}://${host}/api/campaign-image/${campaignId}.jpg`;
 
     // Fetch the real campaign details from Firestore
     const campaign = await fetchCampaignFromFirestore(campaignId);
     if (campaign) {
       title = `Dona a: ${campaign.title}`;
       description = `${campaign.description.substring(0, 150)}... Organizado por ${campaign.organizerName}. Apóyanos con Zelle y Pago Móvil.`;
-      imageUrl = campaign.image;
     }
 
     // Replace the meta placeholders with rich preview open graph tags
@@ -80,7 +116,7 @@ app.get('/campaigns/:id', async (req, res) => {
         <meta property="og:description" content="${description}" />
         <meta property="og:image" content="${imageUrl}" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://donafacil.app/campaigns/${campaignId}" />
+        <meta property="og:url" content="${protocol}://${host}/campaigns/${campaignId}" />
         <meta property="og:site_name" content="donafacil.app" />
         <!-- WhatsApp rich preview specific overrides -->
         <meta property="og:image:width" content="1200" />
