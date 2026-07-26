@@ -96,7 +96,7 @@ app.get('/campaigns/:id', async (req, res) => {
     
     // Resolve dynamic host/domain to build absolute HTTPS preview links
     const host = req.headers.host || 'donafacil.app';
-    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const protocol = 'https'; // Force absolute HTTPS for social media bots
     let imageUrl = `${protocol}://${host}/api/campaign-image/${campaignId}.jpg`;
 
     // Fetch the real campaign details from Firestore
