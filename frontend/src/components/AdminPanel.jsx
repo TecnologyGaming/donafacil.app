@@ -43,6 +43,20 @@ export default function AdminPanel() {
   // Registered Users State
   const [usersList, setUsersList] = useState([]);
 
+  // Create Campaign on Behalf of User States
+  const [showCreateOnBehalfModal, setShowCreateOnBehalfModal] = useState(false);
+  const [behalfSelectedUser, setBehalfSelectedUser] = useState("");
+  const [behalfTitle, setBehalfTitle] = useState("");
+  const [behalfCategory, setBehalfCategory] = useState("Salud");
+  const [behalfGoal, setBehalfGoal] = useState("");
+  const [behalfDescription, setBehalfDescription] = useState("");
+  const [behalfImages, setBehalfImages] = useState([]);
+  const [behalfCustomUrl, setBehalfCustomUrl] = useState("");
+  const [behalfCedula, setBehalfCedula] = useState("");
+  const [behalfSelfie, setBehalfSelfie] = useState("");
+  const [behalfPrimaryIndex, setBehalfPrimaryIndex] = useState(0);
+  const [isSubmittingBehalf, setIsSubmittingBehalf] = useState(false);
+
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     if (loginUser === "DONATEX" && loginPass === "Venezuela257#") {
@@ -143,6 +157,101 @@ export default function AdminPanel() {
       });
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const convertToBase64Admin = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleCreateOnBehalf = async (e) => {
+    e.preventDefault();
+    if (!behalfSelectedUser || !behalfTitle || !behalfDescription || !behalfGoal) {
+      toast({
+        title: "Campos vacíos",
+        description: "Completa toda la información obligatoria.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (behalfImages.length === 0) {
+      toast({
+        title: "Faltan fotos",
+        description: "Agrega al menos una foto de campaña.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!behalfCedula || !behalfSelfie) {
+      toast({
+        title: "Falta Verificación",
+        description: "Es obligatorio subir la cédula y la selfie del usuario para seguridad.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmittingBehalf(true);
+
+    try {
+      const selectedUserData = usersList.find(u => u.email === behalfSelectedUser);
+      if (!selectedUserData) throw new Error("User not found");
+
+      // Reorder images
+      const reordered = [...behalfImages];
+      if (behalfPrimaryIndex > 0 && behalfPrimaryIndex < reordered.length) {
+        const pImg = reordered[behalfPrimaryIndex];
+        reordered.splice(behalfPrimaryIndex, 1);
+        reordered.unshift(pImg);
+      }
+
+      await mockDb.createCampaign({
+        title: behalfTitle,
+        category: behalfCategory,
+        goal: parseFloat(behalfGoal),
+        description: behalfDescription,
+        images: reordered,
+        primaryImage: reordered[0],
+        cedulaImage: behalfCedula,
+        selfieImage: behalfSelfie,
+        organizerName: selectedUserData.name,
+        organizerEmail: selectedUserData.email,
+        organizerPhone: selectedUserData.phone || "N/A"
+      });
+
+      setIsSubmittingBehalf(false);
+      setShowCreateOnBehalfModal(false);
+      
+      // Clean form
+      setBehalfTitle("");
+      setBehalfDescription("");
+      setBehalfGoal("");
+      setBehalfImages([]);
+      setBehalfCedula("");
+      setBehalfSelfie("");
+      setBehalfPrimaryIndex(0);
+
+      await loadData();
+
+      toast({
+        title: "¡Campaña Creada!",
+        description: `Se registró con éxito la campaña bajo la cuenta de "${selectedUserData.name}".`,
+      });
+    } catch (err) {
+      console.error(err);
+      setIsSubmittingBehalf(false);
+      toast({
+        title: "Error al crear",
+        description: "No se pudo registrar la campaña en el servidor.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1038,9 +1147,28 @@ export default function AdminPanel() {
 
         {activeTab === "usuarios" && (
           <div className="bg-white border rounded-2xl overflow-hidden shadow-sm">
-            <div className="p-5 border-b flex justify-between items-center bg-slate-50/50">
-              <h2 className="font-extrabold text-gray-900 text-base">Cuentas Registradas en el Portal</h2>
-              <span className="text-xs text-gray-400 font-semibold">Gestión de usuarios en tiempo real</span>
+            <div className="p-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+              <div>
+                <h2 className="font-extrabold text-gray-900 text-base">Cuentas Registradas en el Portal</h2>
+                <span className="text-xs text-gray-400 font-semibold">Gestión de usuarios en tiempo real</span>
+              </div>
+              <button
+                onClick={() => {
+                  if (usersList.length === 0) {
+                    toast({
+                      title: "Sin usuarios",
+                      description: "No hay usuarios registrados a quienes crearles campañas.",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  setBehalfSelectedUser(usersList[0].email);
+                  setShowCreateOnBehalfModal(true);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm"
+              >
+                + Crear Campaña para Usuario
+              </button>
             </div>
 
             <div className="overflow-x-auto">
@@ -1188,18 +1316,263 @@ export default function AdminPanel() {
 
             </div>
 
-            {/* Footer buttons */}
-            <div className="bg-slate-50 p-4 border-t flex justify-end gap-3">
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Crear Campaña en Nombre de Usuario */}
+      {showCreateOnBehalfModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] overflow-y-auto p-4 flex justify-center items-start text-left font-sans">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border p-6 sm:p-8 my-6 space-y-5 relative">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b">
+              <div>
+                <h3 className="text-base font-extrabold text-gray-900">Crear Campaña en Nombre de Usuario</h3>
+                <p className="text-[10px] text-gray-400">Registra una causa directa vinculada a la cuenta de un usuario</p>
+              </div>
               <button
-                onClick={() => {
-                  setShowVerifyModal(false);
-                  setSelectedCampaignForVerify(null);
-                }}
-                className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs py-2 px-5 rounded-xl transition-all"
+                onClick={() => setShowCreateOnBehalfModal(false)}
+                className="text-gray-400 hover:text-gray-600 font-bold text-lg"
               >
-                Cerrar Ventana
+                ✕
               </button>
             </div>
+
+            {/* Form */}
+            <form onSubmit={handleCreateOnBehalf} className="space-y-4">
+              
+              {/* User Selector */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase">Seleccionar Cuenta de Usuario</label>
+                <select
+                  value={behalfSelectedUser}
+                  onChange={(e) => setBehalfSelectedUser(e.target.value)}
+                  className="w-full border rounded-xl px-3 py-2 text-xs outline-none bg-white font-semibold mt-1"
+                >
+                  {usersList.map(u => (
+                    <option key={u.email} value={u.email}>{u.name} ({u.email})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase">Título de la Campaña</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Apoyo médico para..."
+                  value={behalfTitle}
+                  onChange={(e) => setBehalfTitle(e.target.value)}
+                  className="w-full border rounded-xl px-3.5 py-2 text-xs font-semibold outline-none mt-1 focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+
+              {/* Category and Goal */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase">Categoría</label>
+                  <select
+                    value={behalfCategory}
+                    onChange={(e) => setBehalfCategory(e.target.value)}
+                    className="w-full border rounded-xl px-2.5 py-2 text-xs outline-none bg-white font-semibold mt-1"
+                  >
+                    <option value="Salud">Salud</option>
+                    <option value="Emergencias">Emergencias</option>
+                    <option value="Educación">Educación</option>
+                    <option value="Deportes">Deportes</option>
+                    <option value="Mascotas">Mascotas</option>
+                    <option value="Comunidad">Comunidad</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase">Meta de Recaudación (€)</label>
+                  <input
+                    type="number"
+                    required
+                    min="100"
+                    placeholder="5000"
+                    value={behalfGoal}
+                    onChange={(e) => setBehalfGoal(e.target.value)}
+                    className="w-full border rounded-xl px-3.5 py-2 text-xs font-bold outline-none mt-1 focus:ring-2 focus:ring-emerald-500/50"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase">Descripción de la Historia</label>
+                <textarea
+                  required
+                  rows="4"
+                  placeholder="Explica detalladamente la causa..."
+                  value={behalfDescription}
+                  onChange={(e) => setBehalfDescription(e.target.value)}
+                  className="w-full border rounded-xl px-3.5 py-2 text-xs outline-none mt-1 focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+
+              {/* Photos upload area with limit 3 */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-bold text-gray-400 uppercase">Fotos de Campaña ({behalfImages.length} de máx 3)</label>
+                
+                {behalfImages.length < 3 && (
+                  <div className="border border-dashed p-3 rounded-lg bg-slate-50 text-center space-y-1.5">
+                    <label className="bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-all inline-block">
+                      Añadir Foto
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const f = e.target.files[0];
+                          if (f) {
+                            const b64 = await convertToBase64Admin(f);
+                            setBehalfImages([...behalfImages, b64]);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-[9px] text-gray-400 block">o introduce URL de prueba:</span>
+                    <div className="flex gap-1 max-w-sm mx-auto">
+                      <input
+                        type="text"
+                        placeholder="https://..."
+                        value={behalfCustomUrl}
+                        onChange={(e) => setBehalfCustomUrl(e.target.value)}
+                        className="w-full text-[10px] border px-2 py-1 rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (behalfCustomUrl.trim()) {
+                            setBehalfImages([...behalfImages, behalfCustomUrl.trim()]);
+                            setBehalfCustomUrl("");
+                          }
+                        }}
+                        className="bg-slate-800 hover:bg-slate-900 text-white text-[10px] px-2.5 rounded"
+                      >
+                        OK
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Previews */}
+                {behalfImages.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {behalfImages.map((img, idx) => {
+                      const isPrimary = behalfPrimaryIndex === idx;
+                      return (
+                        <div key={idx} className={`relative aspect-video rounded-lg overflow-hidden border bg-slate-100 flex flex-col justify-between ${
+                          isPrimary ? "border-amber-400 ring-1 ring-amber-400/30" : "border-slate-200"
+                        }`}>
+                          <img src={img} alt="Preview" className="object-cover w-full h-full" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBehalfImages(behalfImages.filter((_, i) => i !== idx));
+                              if (behalfPrimaryIndex === idx) setBehalfPrimaryIndex(0);
+                            }}
+                            className="absolute top-1 right-1 bg-rose-600 text-white p-0.5 rounded-full shadow"
+                          >
+                            ✕
+                          </button>
+                          {isPrimary ? (
+                            <span className="absolute bottom-1 left-1 bg-amber-500 text-white text-[8px] px-1 rounded font-bold">
+                              ★
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setBehalfPrimaryIndex(idx)}
+                              className="absolute bottom-1 left-1 bg-black/60 text-white text-[7px] px-1 rounded"
+                            >
+                              Set ★
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Verification Cédula and Selfie (Mandatory) */}
+              <div className="border-t pt-3 space-y-3">
+                <label className="block text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  Verificación de Identidad (Obligatoria)
+                </label>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Cedula */}
+                  <div className="border p-3 rounded-lg bg-slate-50 text-center space-y-2">
+                    <span className="text-[9px] font-bold text-gray-400 block">1. Cédula / ID</span>
+                    {behalfCedula ? (
+                      <div className="relative aspect-video rounded overflow-hidden border">
+                        <img src={behalfCedula} alt="Cédula" className="object-cover w-full h-full" />
+                        <button type="button" onClick={() => setBehalfCedula("")} className="absolute top-1 right-1 bg-rose-600 text-white p-0.5 rounded-full">✕</button>
+                      </div>
+                    ) : (
+                      <label className="bg-slate-800 hover:bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded cursor-pointer transition-all inline-block">
+                        Subir Cédula
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const f = e.target.files[0];
+                            if (f) {
+                              const b64 = await convertToBase64Admin(f);
+                              setBehalfCedula(b64);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Selfie */}
+                  <div className="border p-3 rounded-lg bg-slate-50 text-center space-y-2">
+                    <span className="text-[9px] font-bold text-gray-400 block">2. Selfie</span>
+                    {behalfSelfie ? (
+                      <div className="relative aspect-video rounded overflow-hidden border">
+                        <img src={behalfSelfie} alt="Selfie" className="object-cover w-full h-full" />
+                        <button type="button" onClick={() => setBehalfSelfie("")} className="absolute top-1 right-1 bg-rose-600 text-white p-0.5 rounded-full">✕</button>
+                      </div>
+                    ) : (
+                      <label className="bg-slate-800 hover:bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded cursor-pointer transition-all inline-block">
+                        Subir Selfie
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const f = e.target.files[0];
+                            if (f) {
+                              const b64 = await convertToBase64Admin(f);
+                              setBehalfSelfie(b64);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={isSubmittingBehalf}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-extrabold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+              >
+                {isSubmittingBehalf ? "Registrando en Firestore..." : "Crear y Lanzar Campaña"}
+              </button>
+
+            </form>
 
           </div>
         </div>
