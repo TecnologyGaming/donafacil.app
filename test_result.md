@@ -275,6 +275,28 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✓ VIEWPORT TEST (User Request): Terms and Conditions verified on desktop viewport (1920x1080). CONFIRMED: (1) 'Miami, Florida' domicile clause is PRESENT: '**Domicilio Legal:** donafacil.app se encuentra constituida, registrada y domiciliada de forma oficial en **Miami, Florida, Estados Unidos**.' ✓, (2) The word 'Stripe' does NOT appear in the Terms and Conditions text ✓. The text mentions 'tarjeta de crédito' (credit card) and 'Zelle' but correctly avoids mentioning 'Stripe' explicitly. Terms and Conditions text is 1343 characters total. All viewport test requirements passed successfully."
+  - task: "Seeded campaigns visibility in Firebase Firestore"
+    implemented: true
+    working: false
+    file: "frontend/src/mock.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "✗ CRITICAL ISSUE: Only 1 out of 4 original seeded campaigns is visible on the landing page. The seeded campaign 'Tratamiento Médico para Sofía' displays correctly with its Unsplash cover image. However, 3 seeded campaigns are MISSING from Firebase Firestore: (1) 'Ayuda Urgente por Inundaciones' (Emergencias category) with Unsplash image https://images.unsplash.com/photo-1599700403969-f77b3aa74837, (2) 'Becas Escolares y Material Didáctico' (Educación category) with Unsplash image https://images.unsplash.com/photo-1577896851231-70ef18881754, (3) 'Operaciones Quirúrgicas de Rescate Animal' (Mascotas category) with Pexels image https://images.pexels.com/photos/15005200/pexels-photo-15005200.jpeg. These campaigns exist in backend MongoDB but are not seeded to Firebase Firestore. The verifyAndSeedFirestore() function in mock.js (lines 193-215) only seeds if Firestore is empty, but it appears the seeding did not complete successfully or was overwritten. Tested all category filters: Emergencias (0 campaigns), Educación (0 campaigns), Mascotas (0 campaigns) - all show 'No encontramos campañas'. Root cause: Firebase Firestore seeding incomplete or failed."
+  - task: "User-created campaign image upload functionality"
+    implemented: true
+    working: false
+    file: "frontend/src/components/CreateCampaign.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "✗ ISSUE: 4 user-created campaigns have BROKEN IMAGES that fail to load (0x0px dimensions). Image URLs point to non-existent location: https://donafacil.app/uploads/img-*.jpg (e.g., img-db8aed06d1004189ae2aeb60c3c4a574.jpg, img-9b732f7032804712a20d5ce38ed45956.jpg, img-4660abce252e448fb6c1d1583bdfef9d.jpg, img-32a41ee925424436b61f711a547d1808.jpg). These campaigns were created through the campaign creation form, but the image upload functionality is storing invalid URLs. The /uploads/ directory either doesn't exist, has incorrect permissions, or the upload process is not properly saving files to a publicly accessible location. This affects user experience as campaign cards display gray placeholder boxes instead of images. Root cause: Image upload functionality not properly configured or upload directory not accessible."
 
 metadata:
   created_by: "main_agent"
@@ -283,7 +305,9 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Missing seeded campaigns visibility"
+    - "User-created campaign broken images"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -319,3 +343,5 @@ agent_communication:
     message: "Viewport test complete on https://campanaya.preview.emergentagent.com/donatex (Desktop 1920x1080). User requested verification of 'Gestión de Usuarios' tab and '+ Crear Campaña para Usuario' modal functionality. ALL 15 REQUIREMENTS VERIFIED: ✅ Admin login successful (DONATEX / Venezuela257#), ✅ 'Gestión de Usuarios' tab accessible and clickable, ✅ '+ Crear Campaña para Usuario' button present and clickable, ✅ Modal opens successfully, ✅ Modal visible with proper dimensions (576x788.5), ✅ User dropdown selector present (7 user options), ✅ Title field present, ✅ Category dropdown present (6 options: Salud, Emergencias, Educación, Deportes, Mascotas, Comunidad), ✅ Goal field present (min: 100), ✅ Description field present (4 rows), ✅ Verification section header present ('Verificación de Identidad (Obligatoria)'), ✅ Cédula upload button present ('Subir Cédula'), ✅ Selfie upload button present ('Subir Selfie'), ✅ No React compilation errors, ✅ No error messages in DOM. Modal form contains all mandatory fields including user dropdown, title, category, goal, description, and mandatory verification document uploads (Cédula and Selfie) without any React compilation errors. All viewport test requirements passed successfully."
   - agent: "testing"
     message: "Responsive test complete on https://campanaya.preview.emergentagent.com/donatex (Desktop 1920x1080). User requested verification of Admin Edit Campaign Modal on 'Gestión de Solicitudes' tab. ALL 15 REQUIREMENTS VERIFIED: ✅ Admin login successful (DONATEX / Venezuela257#), ✅ 'Gestión de Solicitudes' tab active by default, ✅ Found 5 'Editar' buttons in campaigns table, ✅ 'Editar' button clickable, ✅ Edit Campaign Modal opens successfully with header 'Editar Campaña (Administrador)', ✅ Modal dimensions: 512px × 480px, centered at x=704, y=40, ✅ Title input accessible (pre-filled with 'Tratamiento Médico para Sofía', visible, enabled, interactive), ✅ Category dropdown accessible (pre-filled with 'Salud', 6 options available: Salud, Emergencias, Educación, Deportes, Mascotas, Comunidad), ✅ Goal input accessible (pre-filled with '25000', min: 100), ✅ Description textarea accessible (302 chars, 5 rows), ✅ Submit button 'Guardar Cambios' present and enabled, ✅ Close button (✕) present and functional, ✅ Modal fully interactive (tested editing title and changing category), ✅ Modal closes successfully, ✅ No error messages found. Screenshot evidence: admin_edit_campaign_modal_desktop.png. All responsive test requirements passed successfully."
+  - agent: "testing"
+    message: "VIEWPORT TEST COMPLETE (User Request): Verified landing page loads correctly and checked campaign card images across Mobile (390x844), Tablet (768x1024), and Desktop (1920x1080) viewports. CRITICAL FINDINGS: ✅ Landing page loads successfully on all viewports with hero section, statistics, and responsive grid layout, ✅ The ORIGINAL SEEDED campaign 'Tratamiento Médico para Sofía' displays its correct Unsplash cover image (https://images.unsplash.com/photo-1624727828489-a1e03b79bba8) beautifully on all viewports (3500x2333px, loads successfully), ✅ No generic favicons or broken icons are used for the seeded campaign, ✅ Card layout renders beautifully with proper rounded corners, shadows, and responsive grid (1 col mobile, 2 col tablet, 3 col desktop). ⚠ CRITICAL ISSUE DISCOVERED: Only 1 out of 4 original seeded campaigns is visible on the landing page. MISSING SEEDED CAMPAIGNS: 'Ayuda Urgente por Inundaciones' (Emergencias category), 'Becas Escolares y Material Didáctico' (Educación category), 'Operaciones Quirúrgicas de Rescate Animal' (Mascotas category). These 3 seeded campaigns exist in the backend MongoDB with correct Unsplash/Pexels images but are NOT visible in Firebase Firestore (frontend database). ⚠ SECONDARY ISSUE: 4 user-created campaigns are displayed with BROKEN IMAGES (0x0px dimensions, failed to load). These campaigns have images stored at non-existent URLs: https://donafacil.app/uploads/img-*.jpg. The image upload functionality appears to be storing invalid URLs. Tested categories: Todas (5 campaigns visible), Salud (2 campaigns), Emergencias (0 campaigns), Educación (0 campaigns), Mascotas (0 campaigns). Screenshot evidence: landing_page_mobile_viewport.png, landing_page_tablet_viewport.png, landing_page_desktop_viewport.png, landing_page_all_campaigns_desktop.png."
