@@ -64,6 +64,9 @@ export default function AdminPanel() {
   const [editCampaignDescription, setEditCampaignDescription] = useState("");
   const [editCampaignCategory, setEditCampaignCategory] = useState("Salud");
   const [editCampaignGoal, setEditCampaignGoal] = useState("");
+  const [editCampaignImages, setEditCampaignImages] = useState([]);
+  const [editCampaignCustomUrl, setEditCampaignCustomUrl] = useState("");
+  const [editCampaignPrimaryIndex, setEditCampaignPrimaryIndex] = useState(0);
   const [isSavingEditAdmin, setIsSavingEditAdmin] = useState(false);
 
   const handleLoginSubmit = (e) => {
@@ -270,6 +273,8 @@ export default function AdminPanel() {
     setEditCampaignDescription(c.description);
     setEditCampaignCategory(c.category);
     setEditCampaignGoal(c.goal.toString());
+    setEditCampaignImages(c.images || []);
+    setEditCampaignPrimaryIndex(0);
     setShowEditCampaignModal(true);
   };
 
@@ -284,20 +289,41 @@ export default function AdminPanel() {
       return;
     }
 
+    if (editCampaignImages.length === 0) {
+      toast({
+        title: "Sin Fotos",
+        description: "La campaña debe tener al menos 1 foto.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSavingEditAdmin(true);
     try {
-      await mockDb.updateCampaign(editCampaignId, {
+      const reordered = [...editCampaignImages];
+      if (editCampaignPrimaryIndex > 0 && editCampaignPrimaryIndex < reordered.length) {
+        const pImg = reordered[editCampaignPrimaryIndex];
+        reordered.splice(editCampaignPrimaryIndex, 1);
+        reordered.unshift(pImg);
+      }
+
+      // Update in Firestore
+      const campaignRef = doc(db, "campaigns", editCampaignId);
+      await updateDoc(campaignRef, {
         title: editCampaignTitle,
         description: editCampaignDescription,
         category: editCampaignCategory,
-        goal: parseFloat(editCampaignGoal)
+        goal: parseFloat(editCampaignGoal),
+        images: reordered,
+        primaryImage: reordered[0]
       });
+
       setIsSavingEditAdmin(false);
       setShowEditCampaignModal(false);
       await loadData();
       toast({
         title: "Campaña Editada",
-        description: "Los cambios han sido guardados con éxito por el administrador.",
+        description: "Los cambios y las fotos han sido guardados con éxito por el administrador.",
       });
     } catch (err) {
       console.error(err);
@@ -1336,11 +1362,13 @@ export default function AdminPanel() {
                   </span>
                   <div className="aspect-video bg-slate-100 rounded-xl overflow-hidden border flex items-center justify-center relative group">
                     {selectedCampaignForVerify.cedulaImage && selectedCampaignForVerify.cedulaImage !== "N/A" ? (
-                      <img 
-                        src={selectedCampaignForVerify.cedulaImage} 
-                        alt="Cédula" 
-                        className="object-cover w-full h-full"
-                      />
+                      <a href={selectedCampaignForVerify.cedulaImage} target="_blank" rel="noopener noreferrer" className="w-full h-full block cursor-zoom-in" title="Haga clic para ver en tamaño real">
+                        <img 
+                          src={selectedCampaignForVerify.cedulaImage} 
+                          alt="Cédula" 
+                          className="object-cover w-full h-full"
+                        />
+                      </a>
                     ) : (
                       <span className="text-xs text-slate-400 italic">No cargada en la creación</span>
                     )}
@@ -1354,11 +1382,13 @@ export default function AdminPanel() {
                   </span>
                   <div className="aspect-video bg-slate-100 rounded-xl overflow-hidden border flex items-center justify-center relative group">
                     {selectedCampaignForVerify.selfieImage && selectedCampaignForVerify.selfieImage !== "N/A" ? (
-                      <img 
-                        src={selectedCampaignForVerify.selfieImage} 
-                        alt="Selfie" 
-                        className="object-cover w-full h-full"
-                      />
+                      <a href={selectedCampaignForVerify.selfieImage} target="_blank" rel="noopener noreferrer" className="w-full h-full block cursor-zoom-in" title="Haga clic para ver en tamaño real">
+                        <img 
+                          src={selectedCampaignForVerify.selfieImage} 
+                          alt="Selfie" 
+                          className="object-cover w-full h-full"
+                        />
+                      </a>
                     ) : (
                       <span className="text-xs text-slate-400 italic">No cargada en la creación</span>
                     )}
@@ -1704,7 +1734,7 @@ export default function AdminPanel() {
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Descripción de la Causa</label>
                 <textarea
                   required
-                  rows="5"
+                  rows="4"
                   placeholder="Descripción..."
                   value={editCampaignDescription}
                   onChange={(e) => setEditCampaignDescription(e.target.value)}
@@ -1712,10 +1742,98 @@ export default function AdminPanel() {
                 />
               </div>
 
+              {/* Photos management (limit 3) */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Fotos de la Campaña ({editCampaignImages.length} de máx 3)
+                </label>
+
+                {editCampaignImages.length < 3 && (
+                  <div className="border border-dashed p-3 rounded-lg bg-slate-50 text-center space-y-1.5">
+                    <label className="bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-all inline-block">
+                      Añadir Foto
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const f = e.target.files[0];
+                          if (f) {
+                            const b64 = await convertToBase64Admin(f);
+                            setEditCampaignImages([...editCampaignImages, b64]);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-[9px] text-gray-400 block">o introduce URL de prueba:</span>
+                    <div className="flex gap-1 max-w-sm mx-auto">
+                      <input
+                        type="text"
+                        placeholder="https://..."
+                        value={editCampaignCustomUrl}
+                        onChange={(e) => setEditCampaignCustomUrl(e.target.value)}
+                        className="w-full text-[10px] border px-2 py-1 rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (editCampaignCustomUrl.trim()) {
+                            setEditCampaignImages([...editCampaignImages, editCampaignCustomUrl.trim()]);
+                            setEditCampaignCustomUrl("");
+                          }
+                        }}
+                        className="bg-slate-800 hover:bg-slate-900 text-white text-[10px] px-2.5 rounded"
+                      >
+                        OK
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Previews */}
+                {editCampaignImages.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {editCampaignImages.map((img, idx) => {
+                      const isPrimary = editCampaignPrimaryIndex === idx;
+                      return (
+                        <div key={idx} className={`relative aspect-video rounded-lg overflow-hidden border bg-slate-100 flex flex-col justify-between ${
+                          isPrimary ? "border-amber-400 ring-1 ring-amber-400/30" : "border-slate-200"
+                        }`}>
+                          <img src={img} alt="Preview" className="object-cover w-full h-full" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditCampaignImages(editCampaignImages.filter((_, i) => i !== idx));
+                              if (editCampaignPrimaryIndex === idx) setEditCampaignPrimaryIndex(0);
+                            }}
+                            className="absolute top-1 right-1 bg-rose-600 text-white p-0.5 rounded-full shadow"
+                          >
+                            ✕
+                          </button>
+                          {isPrimary ? (
+                            <span className="absolute bottom-1 left-1 bg-amber-500 text-white text-[8px] px-1 rounded font-bold">
+                              ★
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setEditCampaignPrimaryIndex(idx)}
+                              className="absolute bottom-1 left-1 bg-black/60 text-white text-[7px] px-1 rounded"
+                            >
+                              Set ★
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               <button
                 type="submit"
                 disabled={isSavingEditAdmin}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-extrabold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
               >
                 {isSavingEditAdmin ? "Guardando..." : "Guardar Cambios"}
               </button>
