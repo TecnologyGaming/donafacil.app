@@ -66,7 +66,12 @@ export default function CampaignDetail() {
   const { toast } = useToast();
   
   const [campaign, setCampaign] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  
+  // Lightbox Modal state for full screen gallery
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
   const [showDonateModal, setShowDonateModal] = useState(false);
   const [donationAmount, setDonationAmount] = useState("50");
   const [donorName, setDonorName] = useState("");
@@ -93,6 +98,7 @@ export default function CampaignDetail() {
   });
 
   const refreshCampaign = async () => {
+    setIsLoading(true);
     try {
       const c = await mockDb.getCampaignById(id);
       if (c) {
@@ -108,6 +114,8 @@ export default function CampaignDetail() {
       }
     } catch (e) {
       console.error("Error refreshing campaign:", e);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -121,6 +129,15 @@ export default function CampaignDetail() {
     window.addEventListener("df_role_changed", handleRoleChange);
     return () => window.removeEventListener("df_role_changed", handleRoleChange);
   }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-32 text-center flex flex-col items-center justify-center space-y-4">
+        <div className="h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-500 font-semibold text-sm">Cargando causa en tiempo real...</p>
+      </div>
+    );
+  }
 
   if (!campaign) {
     return (
@@ -240,10 +257,11 @@ export default function CampaignDetail() {
   };
 
   const shareCampaign = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const shareUrl = `${window.location.protocol}//${window.location.host}/share/campaign/${campaign.id}`;
+    navigator.clipboard.writeText(shareUrl);
     toast({
-      title: "Enlace copiado",
-      description: "El enlace de esta campaña ha sido copiado al portapapeles."
+      title: "Enlace de campaña copiado",
+      description: "El enlace para compartir en WhatsApp o redes ha sido copiado.",
     });
   };
 
@@ -268,28 +286,45 @@ export default function CampaignDetail() {
             
             {/* Image Gallery */}
             <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm p-3">
-              <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100">
+              <div 
+                onClick={() => setIsLightboxOpen(true)}
+                className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 cursor-zoom-in group/gallery"
+                title="Haga clic para ver fotos en grande"
+              >
                 <img
                   src={campaign.images[activeImageIdx] || "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80"}
                   alt={campaign.title}
-                  className="object-cover w-full h-full transition-all duration-300"
+                  className="object-cover w-full h-full transition-all duration-300 group-hover/gallery:scale-102"
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800&q=80";
                   }}
                 />
                 
+                {/* Expand overlay icon */}
+                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover/gallery:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="bg-black/70 text-white font-bold text-xs px-4 py-2 rounded-full shadow-lg">
+                    🔍 Ampliar Imágenes
+                  </span>
+                </div>
+                
                 {campaign.images.length > 1 && (
                   <>
                     <button
-                      onClick={() => setActiveImageIdx(prev => (prev === 0 ? campaign.images.length - 1 : prev - 1))}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIdx(prev => (prev === 0 ? campaign.images.length - 1 : prev - 1));
+                      }}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white z-10"
                     >
                       <ChevronLeft className="h-5 w-5" />
                     </button>
                     <button
-                      onClick={() => setActiveImageIdx(prev => (prev === campaign.images.length - 1 ? 0 : prev + 1))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIdx(prev => (prev === campaign.images.length - 1 ? 0 : prev + 1));
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white z-10"
                     >
                       <ChevronRight className="h-5 w-5" />
                     </button>
@@ -786,6 +821,87 @@ export default function CampaignDetail() {
             </form>
 
           </div>
+        </div>
+      )}
+
+      {/* Lightbox / Fullscreen Image Viewer Modal */}
+      {isLightboxOpen && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[999999] flex flex-col items-center justify-between p-4 font-sans select-none"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          {/* Close button top right */}
+          <div className="w-full flex justify-between items-center text-white/80 p-2 shrink-0">
+            <span className="text-xs font-bold bg-white/10 px-3 py-1 rounded-full">
+              Foto {activeImageIdx + 1} de {campaign.images.length}
+            </span>
+            <button 
+              onClick={() => setIsLightboxOpen(false)}
+              className="text-white hover:text-rose-500 font-extrabold text-2xl p-2 transition-colors focus:outline-none"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Main big image area with slider controls */}
+          <div className="flex-1 w-full max-w-4xl flex items-center justify-between gap-4 relative">
+            
+            {campaign.images.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImageIdx(prev => (prev === 0 ? campaign.images.length - 1 : prev - 1));
+                }}
+                className="h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all shadow-lg active:scale-95 focus:outline-none"
+              >
+                <ChevronLeft className="h-7 w-7" />
+              </button>
+            )}
+
+            <div 
+              className="flex-1 h-full max-h-[75vh] flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image
+            >
+              <img
+                src={campaign.images[activeImageIdx]}
+                alt="Causa Ampliada"
+                className="object-contain max-w-full max-h-full rounded-lg shadow-2xl transition-all duration-300"
+              />
+            </div>
+
+            {campaign.images.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImageIdx(prev => (prev === campaign.images.length - 1 ? 0 : prev + 1));
+                }}
+                className="h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all shadow-lg active:scale-95 focus:outline-none"
+              >
+                <ChevronRight className="h-7 w-7" />
+              </button>
+            )}
+          </div>
+
+          {/* Thumbnail preview slider bar */}
+          {campaign.images.length > 1 && (
+            <div className="flex gap-3 justify-center py-4 shrink-0 overflow-x-auto w-full max-w-md">
+              {campaign.images.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIdx(idx);
+                  }}
+                  className={`relative w-16 aspect-video rounded-md overflow-hidden border-2 transition-all ${
+                    activeImageIdx === idx ? "border-amber-400 scale-105" : "border-transparent opacity-50 hover:opacity-100"
+                  }`}
+                >
+                  <img src={img} alt="Thumb" className="object-cover w-full h-full" />
+                </button>
+              ))}
+            </div>
+          )}
+
         </div>
       )}
 

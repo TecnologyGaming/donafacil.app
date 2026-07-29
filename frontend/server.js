@@ -81,8 +81,8 @@ app.get('/api/campaign-image/:id.jpg', async (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'favicon.ico'));
 });
 
-// 2. Intercept Campaign Detail Route to inject Open Graph meta tags for WhatsApp previews!
-app.get('/campaigns/:id', async (req, res) => {
+// 2. Intercept Campaign Share Route to inject Open Graph meta tags for WhatsApp previews and redirect!
+app.get('/share/campaign/:id', async (req, res) => {
   const campaignId = req.params.id;
   const indexPath = path.join(__dirname, 'build', 'index.html');
   
@@ -106,7 +106,7 @@ app.get('/campaigns/:id', async (req, res) => {
       description = `${campaign.description.substring(0, 150)}... Organizado por ${campaign.organizerName}. Apóyanos con Zelle y Pago Móvil.`;
     }
 
-    // Replace the meta placeholders with rich preview open graph tags
+    // Replace the meta placeholders, inject social meta tags, and REDIRECT browsers instantly to /campaigns/:id
     let result = htmlData
       .replace(/<title>.*?<\/title>/g, `<title>${title}</title>`)
       .replace(/<meta name="description" content=".*?" \/>/g, `<meta name="description" content="${description}" />`)
@@ -116,13 +116,17 @@ app.get('/campaigns/:id', async (req, res) => {
         <meta property="og:description" content="${description}" />
         <meta property="og:image" content="${imageUrl}" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="${protocol}://${host}/campaigns/${campaignId}" />
+        <meta property="og:url" content="${protocol}://${host}/share/campaign/${campaignId}" />
         <meta property="og:site_name" content="donafacil.app" />
         <!-- WhatsApp rich preview specific overrides -->
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="${imageUrl}" />
+        <script type="text/javascript">
+          // Redirigir de inmediato al navegador del usuario a la vista de detalles
+          window.location.replace("/campaigns/${campaignId}");
+        </script>
         </head>
       `);
 

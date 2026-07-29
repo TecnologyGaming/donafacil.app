@@ -57,6 +57,15 @@ export default function AdminPanel() {
   const [behalfPrimaryIndex, setBehalfPrimaryIndex] = useState(0);
   const [isSubmittingBehalf, setIsSubmittingBehalf] = useState(false);
 
+  // Admin Edit Campaign States
+  const [showEditCampaignModal, setShowEditCampaignModal] = useState(false);
+  const [editCampaignId, setEditCampaignId] = useState("");
+  const [editCampaignTitle, setEditCampaignTitle] = useState("");
+  const [editCampaignDescription, setEditCampaignDescription] = useState("");
+  const [editCampaignCategory, setEditCampaignCategory] = useState("Salud");
+  const [editCampaignGoal, setEditCampaignGoal] = useState("");
+  const [isSavingEditAdmin, setIsSavingEditAdmin] = useState(false);
+
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     if (loginUser === "DONATEX" && loginPass === "Venezuela257#") {
@@ -250,6 +259,52 @@ export default function AdminPanel() {
       toast({
         title: "Error al crear",
         description: "No se pudo registrar la campaña en el servidor.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleStartEditAdmin = (c) => {
+    setEditCampaignId(c.id);
+    setEditCampaignTitle(c.title);
+    setEditCampaignDescription(c.description);
+    setEditCampaignCategory(c.category);
+    setEditCampaignGoal(c.goal.toString());
+    setShowEditCampaignModal(true);
+  };
+
+  const handleSaveEditAdmin = async (e) => {
+    e.preventDefault();
+    if (!editCampaignTitle || !editCampaignDescription || !editCampaignGoal) {
+      toast({
+        title: "Campos vacíos",
+        description: "Rellena toda la información obligatoria.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSavingEditAdmin(true);
+    try {
+      await mockDb.updateCampaign(editCampaignId, {
+        title: editCampaignTitle,
+        description: editCampaignDescription,
+        category: editCampaignCategory,
+        goal: parseFloat(editCampaignGoal)
+      });
+      setIsSavingEditAdmin(false);
+      setShowEditCampaignModal(false);
+      await loadData();
+      toast({
+        title: "Campaña Editada",
+        description: "Los cambios han sido guardados con éxito por el administrador.",
+      });
+    } catch (err) {
+      console.error(err);
+      setIsSavingEditAdmin(false);
+      toast({
+        title: "Error al editar",
+        description: "No se pudieron registrar tus cambios.",
         variant: "destructive"
       });
     }
@@ -700,8 +755,14 @@ export default function AdminPanel() {
                               Ver Causa <ArrowUpRight className="h-3 w-3" />
                             </Link>
                             <button
+                              onClick={() => handleStartEditAdmin(c)}
+                              className="text-xs font-bold text-slate-100 hover:text-white bg-slate-800 hover:bg-slate-900 px-2.5 py-1.5 rounded-lg transition-all"
+                            >
+                              Editar
+                            </button>
+                            <button
                               onClick={() => handleDeleteCampaignAdmin(c.id, c.title)}
-                              className="text-xs font-bold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 px-2.5 py-1.5 rounded-lg border border-rose-100 transition-all animate-pulse"
+                              className="text-xs font-bold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 px-2.5 py-1.5 rounded-lg border border-rose-100 transition-all"
                             >
                               Borrar Causa
                             </button>
@@ -1572,6 +1633,92 @@ export default function AdminPanel() {
                 {isSubmittingBehalf ? "Registrando en Firestore..." : "Crear y Lanzar Campaña"}
               </button>
 
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Editar Campaña por el Administrador */}
+      {showEditCampaignModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] overflow-y-auto p-4 flex justify-center items-start text-left font-sans">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border p-6 sm:p-8 my-6 space-y-5 relative">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b">
+              <h3 className="font-extrabold text-base">Editar Campaña (Administrador)</h3>
+              <button
+                onClick={() => setShowEditCampaignModal(false)}
+                className="text-gray-400 hover:text-gray-600 font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveEditAdmin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Título de la Campaña</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Título..."
+                  value={editCampaignTitle}
+                  onChange={(e) => setEditCampaignTitle(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Categoría</label>
+                  <select
+                    value={editCampaignCategory}
+                    onChange={(e) => setEditCampaignCategory(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none bg-white font-semibold"
+                  >
+                    <option value="Salud">Salud</option>
+                    <option value="Emergencias">Emergencias</option>
+                    <option value="Educación">Educación</option>
+                    <option value="Deportes">Deportes</option>
+                    <option value="Mascotas">Mascotas</option>
+                    <option value="Comunidad">Comunidad</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Meta de Recaudación (€)</label>
+                  <input
+                    type="number"
+                    required
+                    min="100"
+                    placeholder="5000"
+                    value={editCampaignGoal}
+                    onChange={(e) => setEditCampaignGoal(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Descripción de la Causa</label>
+                <textarea
+                  required
+                  rows="5"
+                  placeholder="Descripción..."
+                  value={editCampaignDescription}
+                  onChange={(e) => setEditCampaignDescription(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSavingEditAdmin}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-extrabold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+              >
+                {isSavingEditAdmin ? "Guardando..." : "Guardar Cambios"}
+              </button>
             </form>
 
           </div>
