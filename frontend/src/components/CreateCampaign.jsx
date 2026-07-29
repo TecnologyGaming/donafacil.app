@@ -94,11 +94,34 @@ export default function CreateCampaign() {
     });
   };
 
-  const convertToBase64 = (file) => {
+  const compressAndConvertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = (err) => reject(err);
+      };
       reader.onerror = (error) => reject(error);
     });
   };
@@ -117,7 +140,7 @@ export default function CreateCampaign() {
     const file = e.target.files[0];
     if (file) {
       try {
-        const base64Url = await convertToBase64(file);
+        const base64Url = await compressAndConvertToBase64(file);
         handleAddImage(base64Url);
       } catch (err) {
         console.error("Error converting file to Base64:", err);
@@ -521,7 +544,7 @@ export default function CreateCampaign() {
                             onChange={async (e) => {
                               const f = e.target.files[0];
                               if (f) {
-                                const base64 = await convertToBase64(f);
+                                const base64 = await compressAndConvertToBase64(f);
                                 setCedulaImage(base64);
                               }
                             }}
@@ -563,7 +586,7 @@ export default function CreateCampaign() {
                             onChange={async (e) => {
                               const f = e.target.files[0];
                               if (f) {
-                                const base64 = await convertToBase64(f);
+                                const base64 = await compressAndConvertToBase64(f);
                                 setSelfieImage(base64);
                               }
                             }}

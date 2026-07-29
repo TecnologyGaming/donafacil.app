@@ -172,11 +172,34 @@ export default function AdminPanel() {
     }
   };
 
-  const convertToBase64Admin = (file) => {
+  const compressAndConvertToBase64Admin = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = (err) => reject(err);
+      };
       reader.onerror = (error) => reject(error);
     });
   };
@@ -1518,7 +1541,7 @@ export default function AdminPanel() {
                         onChange={async (e) => {
                           const f = e.target.files[0];
                           if (f) {
-                            const b64 = await convertToBase64Admin(f);
+                            const b64 = await compressAndConvertToBase64Admin(f);
                             setBehalfImages([...behalfImages, b64]);
                           }
                         }}
@@ -1615,7 +1638,7 @@ export default function AdminPanel() {
                           onChange={async (e) => {
                             const f = e.target.files[0];
                             if (f) {
-                              const b64 = await convertToBase64Admin(f);
+                              const b64 = await compressAndConvertToBase64Admin(f);
                               setBehalfCedula(b64);
                             }
                           }}
@@ -1642,7 +1665,7 @@ export default function AdminPanel() {
                           onChange={async (e) => {
                             const f = e.target.files[0];
                             if (f) {
-                              const b64 = await convertToBase64Admin(f);
+                              const b64 = await compressAndConvertToBase64Admin(f);
                               setBehalfSelfie(b64);
                             }
                           }}
@@ -1758,7 +1781,7 @@ export default function AdminPanel() {
                         onChange={async (e) => {
                           const f = e.target.files[0];
                           if (f) {
-                            const b64 = await convertToBase64Admin(f);
+                            const b64 = await compressAndConvertToBase64Admin(f);
                             setEditCampaignImages([...editCampaignImages, b64]);
                           }
                         }}
