@@ -257,7 +257,7 @@ export default function CampaignDetail() {
   };
 
   const shareCampaign = () => {
-    const shareUrl = `${window.location.protocol}//${window.location.host}/share/campaign/${campaign.id}`;
+    const shareUrl = `${window.location.origin}/share/campaign/${campaign.id}`;
     navigator.clipboard.writeText(shareUrl);
     toast({
       title: "Enlace de campaña copiado",
