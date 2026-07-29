@@ -4,17 +4,12 @@ import {
   doc, 
   getDocs, 
   getDoc, 
-  addDoc, 
+  setDoc, 
   updateDoc, 
-  query, 
-  where, 
-  orderBy, 
-  setDoc,
-  increment,
-  deleteDoc
+  deleteDoc,
+  increment
 } from "firebase/firestore";
 
-// Seed initial campaigns to Cloud Firestore if empty
 const INITIAL_CAMPAIGNS = [
   {
     id: "1",
@@ -109,7 +104,7 @@ const INITIAL_CAMPAIGNS = [
     createdAt: "2025-06-17T07:30:00Z",
     customPaymentMethods: [
       { id: "p5", name: "Pago Móvil", details: "BOD (0116) - 0412-5556677 - V-99887766", approved: true },
-      { id: "p6", name: "Zelle", "details": "zelle@patitasfelices.org", approved: false }
+      { id: "p6", name: "Zelle", details: "zelle@patitasfelices.org", approved: false }
     ]
   }
 ];
@@ -131,7 +126,7 @@ const INITIAL_DONATIONS = [
     amount: 50.0,
     comment: "¡Fuerza Sofía!",
     date: "2025-06-15T14:45:00Z",
-    paymentMethod: "Tarjeta de Crédito (Stripe)"
+    paymentMethod: "Tarjeta de Crédito"
   },
   {
     id: "d3",
@@ -158,7 +153,7 @@ const INITIAL_DONATIONS = [
     amount: 100.0,
     comment: "Mucha fuerza, estamos con ustedes.",
     date: "2025-06-16T11:20:00Z",
-    paymentMethod: "Tarjeta de Crédito (Stripe)"
+    paymentMethod: "Tarjeta de Crédito"
   },
   {
     id: "d6",
@@ -192,26 +187,23 @@ const INITIAL_DONATIONS = [
 // Helper to seed Firestore if empty
 const verifyAndSeedFirestore = async () => {
   try {
-    const campaignsCol = collection(db, "campaigns");
-    const snapshot = await getDocs(campaignsCol);
-    if (snapshot.empty) {
-      console.log("Firestore empty. Seeding INITIAL_CAMPAIGNS...");
+    const docRef = doc(db, "campaigns", "1");
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) {
+      console.log("Firestore seeding started...");
       for (const campaign of INITIAL_CAMPAIGNS) {
         await setDoc(doc(db, "campaigns", campaign.id), campaign);
       }
-      
-      const donationsCol = collection(db, "donations");
       for (const donation of INITIAL_DONATIONS) {
         await setDoc(doc(db, "donations", donation.id), donation);
       }
       console.log("Firestore seeding completed!");
     }
   } catch (err) {
-    console.warn("Firestore seed verification skipped/failed (possibly due to Firestore Security Rules):", err);
+    console.warn("Firestore seed verification failed:", err);
   }
 };
 
-// Auto run check on import
 verifyAndSeedFirestore();
 
 export const mockDb = {
@@ -221,13 +213,13 @@ export const mockDb = {
     try {
       const snapshot = await getDocs(collection(db, "campaigns"));
       const list = [];
-      snapshot.forEach(doc => {
-        list.push({ ...doc.data(), id: doc.id });
+      snapshot.forEach(docSnap => {
+        list.push({ ...docSnap.data(), id: docSnap.id });
       });
       return list;
     } catch (e) {
       console.error("Error getting all campaigns:", e);
-      return INITIAL_CAMPAIGNS; // Safe fallback
+      return INITIAL_CAMPAIGNS;
     }
   },
 
@@ -235,12 +227,10 @@ export const mockDb = {
   getActiveCampaigns: async (category = "Todas", search = "") => {
     await verifyAndSeedFirestore();
     try {
-      let q = collection(db, "campaigns");
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(collection(db, "campaigns"));
       const list = [];
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
-        // Manual filter to work perfectly on any Firestore setup index-free
         const matchesCategory = category === "Todas" || data.category === category;
         const matchesSearch = !search || (
           data.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -254,7 +244,7 @@ export const mockDb = {
       return list;
     } catch (e) {
       console.error("Error getting active campaigns:", e);
-      return INITIAL_CAMPAIGNS.filter(c => c.isActive); // Fallback
+      return INITIAL_CAMPAIGNS.filter(c => c.isActive);
     }
   },
 
@@ -270,11 +260,11 @@ export const mockDb = {
       return null;
     } catch (e) {
       console.error("Error getting campaign by id:", e);
-      return INITIAL_CAMPAIGNS.find(c => c.id === id); // Fallback
+      return INITIAL_CAMPAIGNS.find(c => c.id === id);
     }
   },
 
-  // Create campaign (limit 3 photos)
+  // Create campaign
   createCampaign: async (campaignData) => {
     try {
       const newId = Math.random().toString(36).substring(2, 11);
@@ -282,7 +272,7 @@ export const mockDb = {
         id: Math.random().toString(36).substring(2, 9),
         name: p.name,
         details: p.details,
-        approved: false // Creator methods start pending approval
+        approved: false
       }));
 
       const payload = {
@@ -293,7 +283,7 @@ export const mockDb = {
         current: 0.0,
         description: campaignData.description,
         images: (campaignData.images || []).slice(0, 3),
-        isActive: false,
+        isActive: false, // Wait for admin approval
         stripeEnabled: true,
         cedulaImage: campaignData.cedulaImage || "N/A",
         selfieImage: campaignData.selfieImage || "N/A",
@@ -325,13 +315,11 @@ export const mockDb = {
         amount: parseFloat(donationData.amount),
         comment: donationData.comment || "",
         date: new Date().toISOString(),
-        paymentMethod: donationData.paymentMethod || "Tarjeta de Crédito (Stripe)"
+        paymentMethod: donationData.paymentMethod || "Tarjeta de Crédito"
       };
 
-      // 1. Add donation record
       await setDoc(doc(db, "donations", donationId), payload);
 
-      // 2. Increment campaign current amount
       const campaignRef = doc(db, "campaigns", campaignId);
       await updateDoc(campaignRef, {
         current: increment(payload.amount)
@@ -356,7 +344,6 @@ export const mockDb = {
           list.push({ ...d, id: docSnap.id });
         }
       });
-      // Sort by date desc
       list.sort((a, b) => new Date(b.date) - new Date(a.date));
       return list;
     } catch (e) {
@@ -435,7 +422,7 @@ export const mockDb = {
           id: Math.random().toString(36).substring(2, 9),
           name: paymentData.name,
           details: paymentData.details,
-          approved: false // Needs admin approval
+          approved: false
         };
         const updatedMethods = [...currentMethods, newMethod];
         await updateDoc(campaignRef, { customPaymentMethods: updatedMethods });
