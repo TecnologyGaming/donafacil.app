@@ -187,17 +187,20 @@ const INITIAL_DONATIONS = [
 // Helper to seed Firestore if empty
 const verifyAndSeedFirestore = async () => {
   try {
-    const docRef = doc(db, "campaigns", "1");
-    const snap = await getDoc(docRef);
-    if (!snap.exists()) {
-      console.log("Firestore seeding started...");
-      for (const campaign of INITIAL_CAMPAIGNS) {
-        await setDoc(doc(db, "campaigns", campaign.id), campaign);
+    for (const campaign of INITIAL_CAMPAIGNS) {
+      const docRef = doc(db, "campaigns", campaign.id);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        console.log(`Seeding missing campaign ID: ${campaign.id}`);
+        await setDoc(docRef, campaign);
       }
-      for (const donation of INITIAL_DONATIONS) {
-        await setDoc(doc(db, "donations", donation.id), donation);
+    }
+    for (const donation of INITIAL_DONATIONS) {
+      const docRef = doc(db, "donations", donation.id);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        await setDoc(docRef, donation);
       }
-      console.log("Firestore seeding completed!");
     }
   } catch (err) {
     console.warn("Firestore seed verification failed:", err);
