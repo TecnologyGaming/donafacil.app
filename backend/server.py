@@ -1,4 +1,8 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Path, Body, Query
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
+import base64
+import re
+import io
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -527,6 +531,75 @@ async def admin_get_all_donations():
     donations = await cursor.to_list(1000)
     return [DonationResponse(**d) for d in donations]
 
+
+# FastAPI-level direct /share endpoint for WhatsApp crawlers when Nginx proxies /share to port 8005!
+@app.get("/share/campaign/{campaign_id}", response_class=HTMLResponse)
+async def share_campaign_html(campaign_id: str):
+    c = await db.campaigns.find_one({"id": campaign_id})
+    
+    title = "donafacil.app | Recaudación de Fondos"
+    description = "Crea una campaña gratuita en minutos, comparte tu historia y recibe el apoyo directo de amigos, familiares y donantes con Zelle y Pago Móvil."
+    imageUrl = f"https://donafacil.app/api/campaign-image/{campaign_id}.jpg"
+    
+    if c:
+        title = f"Dona a: {c.get('title')}"
+        desc_val = c.get('description', '')
+        if len(desc_val) > 150:
+            desc_val = desc_val[:150] + "..."
+        description = f"{desc_val} Organizado por {c.get('organizer', {}).get('name', 'Vecino Solidario')}. Apóyanos con Zelle y Pago Móvil."
+    
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>{title}</title>
+    <meta name="description" content="{description}" />
+    <meta property="og:title" content="{title}" />
+    <meta property="og:description" content="{description}" />
+    <meta property="og:image" content="{imageUrl}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://donafacil.app/share/campaign/{campaign_id}" />
+    <meta property="og:site_name" content="donafacil.app" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="{imageUrl}" />
+    <script type="text/javascript">
+        // Redirigir de inmediato al navegador a la SPA
+        window.location.replace("/campaigns/{campaign_id}");
+    </script>
+</head>
+<body>
+    <p>Redirigiendo a la campaña...</p>
+</body>
+</html>"""
+    return HTMLResponse(content=html_content, status_code=200)
+
+
+# FastAPI-level direct /api/campaign-image/{id}.jpg endpoint for WhatsApp crawler image fetching!
+@app.get("/api/campaign-image/{campaign_id}.jpg")
+async def share_campaign_image_binary(campaign_id: str):
+    c = await db.campaigns.find_one({"id": campaign_id})
+    
+    if c:
+        img_str = c.get("primaryImage") or (c.get("images") and c.get("images")[0])
+        if img_str and img_str.startswith("data:image"):
+            try:
+                # Match and extract base64 data
+                matches = re.match(r"^data:([A-Za-z-+\/]+);base64,(.+)$", img_str)
+                if matches:
+                    content_type = matches.group(1)
+                    base64_data = matches.group(2)
+                    image_bytes = base64.b64decode(base64_data)
+                    return StreamingResponse(io.BytesIO(image_bytes), media_type=content_type)
+            except Exception as e:
+                logger.error(f"Error decoding base64 image in python: {e}")
+        
+        # If it is an external URL, redirect to it
+        if img_str and img_str.startswith("http"):
+            return RedirectResponse(url=img_str)
+            
+    # Default fallback
+    return RedirectResponse(url="https://img.icons8.com/color/120/000000/hearts.png")
 
 # Include router
 app.include_router(api_router)

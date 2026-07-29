@@ -528,6 +528,161 @@ def test_campaign_filters():
         print_test("GET /api/campaigns?search=Sofía", False, f"Error: {str(e)}")
         record_test("Campaign search filter", False, critical=False)
 
+def test_share_campaign_html(campaign_id: str):
+    """Test GET /share/campaign/{campaign_id} - HTML response with OG tags and redirect"""
+    print_section("10. Testing Share Campaign HTML Endpoint (Port 8001)")
+    
+    try:
+        # Test on internal backend port 8001 (for port 8005 redundancy on production VPS)
+        share_url = f"http://localhost:8001/share/campaign/{campaign_id}"
+        response = requests.get(share_url, timeout=10, allow_redirects=False)
+        passed = response.status_code == 200
+        
+        if passed:
+            html_content = response.text
+            content_type = response.headers.get("content-type", "")
+            
+            # Check content type is HTML
+            is_html = "text/html" in content_type
+            
+            # Check for required OG tags
+            has_og_image = 'property="og:image"' in html_content
+            has_og_title = 'property="og:title"' in html_content
+            has_og_description = 'property="og:description"' in html_content
+            
+            # Check for window.location redirect script
+            has_redirect_script = "window.location" in html_content
+            has_campaigns_redirect = f"/campaigns/{campaign_id}" in html_content
+            
+            # Check for campaign-image URL in og:image
+            has_campaign_image_url = f"/api/campaign-image/{campaign_id}.jpg" in html_content
+            
+            checks = [
+                is_html,
+                has_og_image,
+                has_og_title,
+                has_og_description,
+                has_redirect_script,
+                has_campaigns_redirect,
+                has_campaign_image_url
+            ]
+            
+            passed = all(checks)
+            
+            if passed:
+                details = f"Status: {response.status_code}, Content-Type: {content_type}"
+                details += f"\n  ✓ Contains og:image meta tag"
+                details += f"\n  ✓ Contains og:title meta tag"
+                details += f"\n  ✓ Contains og:description meta tag"
+                details += f"\n  ✓ Contains window.location redirect script"
+                details += f"\n  ✓ Redirects to /campaigns/{campaign_id}"
+                details += f"\n  ✓ og:image points to /api/campaign-image/{campaign_id}.jpg"
+            else:
+                details = f"Status: {response.status_code} | ERROR: Missing required elements:"
+                if not is_html:
+                    details += "\n  ✗ Not HTML content type"
+                if not has_og_image:
+                    details += "\n  ✗ Missing og:image meta tag"
+                if not has_og_title:
+                    details += "\n  ✗ Missing og:title meta tag"
+                if not has_og_description:
+                    details += "\n  ✗ Missing og:description meta tag"
+                if not has_redirect_script:
+                    details += "\n  ✗ Missing window.location redirect script"
+                if not has_campaigns_redirect:
+                    details += f"\n  ✗ Missing redirect to /campaigns/{campaign_id}"
+                if not has_campaign_image_url:
+                    details += f"\n  ✗ Missing campaign-image URL in og:image"
+        else:
+            details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+        
+        print_test(f"GET /share/campaign/{campaign_id}", passed, details)
+        record_test("Share campaign HTML endpoint", passed, critical=True)
+        return passed
+    except Exception as e:
+        print_test(f"GET /share/campaign/{campaign_id}", False, f"Error: {str(e)}")
+        record_test("Share campaign HTML endpoint", False, critical=True)
+        return False
+
+def test_campaign_image_endpoint(campaign_id: str):
+    """Test GET /api/campaign-image/{campaign_id}.jpg - Image binary or redirect"""
+    print_section("11. Testing Campaign Image Endpoint")
+    
+    try:
+        response = requests.get(f"{BASE_URL}/campaign-image/{campaign_id}.jpg", timeout=10, allow_redirects=False)
+        
+        # Accept 200 (image binary) or 302/307 (redirect)
+        passed = response.status_code in [200, 302, 307]
+        
+        if passed:
+            if response.status_code == 200:
+                # Check if response is image binary
+                content_type = response.headers.get("content-type", "")
+                is_image = "image/" in content_type
+                has_content = len(response.content) > 0
+                
+                if is_image and has_content:
+                    details = f"Status: {response.status_code}, Content-Type: {content_type}, Size: {len(response.content)} bytes"
+                    details += "\n  ✓ Successfully decoded base64 image"
+                else:
+                    passed = False
+                    details = f"Status: {response.status_code} | ERROR: Not a valid image response"
+                    if not is_image:
+                        details += f"\n  ✗ Invalid content type: {content_type}"
+                    if not has_content:
+                        details += "\n  ✗ Empty response body"
+            else:
+                # Redirect response
+                redirect_url = response.headers.get("location", "")
+                is_valid_redirect = redirect_url.startswith("http")
+                
+                if is_valid_redirect:
+                    details = f"Status: {response.status_code}, Redirect to: {redirect_url[:100]}"
+                    details += "\n  ✓ Successfully redirected to external image URL"
+                else:
+                    passed = False
+                    details = f"Status: {response.status_code} | ERROR: Invalid redirect URL: {redirect_url}"
+        else:
+            details = f"Status: {response.status_code}, Expected 200, 302, or 307"
+        
+        print_test(f"GET /api/campaign-image/{campaign_id}.jpg", passed, details)
+        record_test("Campaign image endpoint", passed, critical=True)
+        return passed
+    except Exception as e:
+        print_test(f"GET /api/campaign-image/{campaign_id}.jpg", False, f"Error: {str(e)}")
+        record_test("Campaign image endpoint", False, critical=True)
+        return False
+
+def test_campaign_image_fallback():
+    """Test GET /api/campaign-image/{invalid_id}.jpg - Fallback for missing campaign"""
+    try:
+        invalid_id = "nonexistent-campaign-999"
+        response = requests.get(f"{BASE_URL}/campaign-image/{invalid_id}.jpg", timeout=10, allow_redirects=False)
+        
+        # Should redirect to fallback icon
+        passed = response.status_code in [302, 307]
+        
+        if passed:
+            redirect_url = response.headers.get("location", "")
+            is_fallback = "icons8.com" in redirect_url or "hearts.png" in redirect_url
+            
+            if is_fallback:
+                details = f"Status: {response.status_code}, Fallback redirect: {redirect_url[:100]}"
+                details += "\n  ✓ Correctly redirects to fallback icon for missing campaign"
+            else:
+                passed = False
+                details = f"Status: {response.status_code} | ERROR: Unexpected redirect: {redirect_url}"
+        else:
+            details = f"Status: {response.status_code}, Expected 302 or 307 redirect to fallback"
+        
+        print_test(f"GET /api/campaign-image/{{invalid_id}}.jpg (fallback)", passed, details)
+        record_test("Campaign image fallback", passed, critical=False)
+        return passed
+    except Exception as e:
+        print_test(f"GET /api/campaign-image/{{invalid_id}}.jpg (fallback)", False, f"Error: {str(e)}")
+        record_test("Campaign image fallback", False, critical=False)
+        return False
+
 # ============= MAIN TEST RUNNER =============
 
 def main():
@@ -583,6 +738,15 @@ def main():
     
     # 10. Test filters
     test_campaign_filters()
+    
+    # 11. Test share campaign HTML endpoint (NEW - for port 8005 redundancy)
+    test_share_campaign_html(test_campaign_id)
+    
+    # 12. Test campaign image endpoint (NEW - for port 8005 redundancy)
+    test_campaign_image_endpoint(test_campaign_id)
+    
+    # 13. Test campaign image fallback
+    test_campaign_image_fallback()
     
     # Print summary
     print_summary()

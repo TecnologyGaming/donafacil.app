@@ -163,6 +163,28 @@ backend:
       - working: true
         agent: "testing"
         comment: "✓ TESTED: All admin endpoints working correctly. PATCH /api/admin/campaigns/{id}/toggle-active toggles campaign visibility. PATCH /api/admin/campaigns/{id}/toggle-stripe toggles Stripe payment option. POST /api/admin/campaigns/{id}/approve-payment/{method_id} approves/rejects custom payment methods. GET /api/admin/stats returns correct statistics. GET /api/admin/donations returns all donations."
+  - task: "Share campaign HTML endpoint with OG tags"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: GET /share/campaign/{campaign_id} endpoint working correctly on port 8001. Returns HTML response with all required Open Graph meta tags (og:image, og:title, og:description) and window.location.replace redirect script to /campaigns/{campaign_id}. The og:image correctly points to /api/campaign-image/{campaign_id}.jpg. This endpoint provides perfect redundancy for port 8005 (Nginx PM proxy endpoint on user VPS) to enable rich social media previews on WhatsApp and other platforms. Tested on localhost:8001 - all requirements verified."
+  - task: "Campaign image binary endpoint"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✓ TESTED: GET /api/campaign-image/{campaign_id}.jpg endpoint working correctly. Successfully decodes base64 images and returns binary data with correct content-type, OR redirects (307) to external image URLs (e.g., Unsplash images). Fallback mechanism working correctly - redirects to default hearts icon (https://img.icons8.com/color/120/000000/hearts.png) when campaign not found. This endpoint provides perfect redundancy for port 8005 to serve campaign images to WhatsApp crawlers and social media platforms. All test scenarios passed: external URL redirect, base64 decode, and fallback."
 
 frontend:
   - task: "Navbar responsive logo visibility"
@@ -310,7 +332,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 12
+  test_sequence: 13
   run_ui: false
 
 test_plan:
@@ -359,4 +381,6 @@ agent_communication:
     message: "✅ SEEDED CAMPAIGNS ISSUE FULLY RESOLVED (User Request): Comprehensive viewport testing completed on Desktop (1920x1080), Mobile (390x844), and Tablet (768x1024). ALL 4 SEEDED CAMPAIGNS ARE NOW FULLY VISIBLE WITH PROPER COVER IMAGES LOADING PERFECTLY! ✅ Landing page loads successfully on all viewports with hero section, statistics (60.100 €, 97 Campañas activas, 1723 Donaciones realizadas), and responsive grid layout. ✅ 'Tratamiento Médico para Sofía' (Salud) - Unsplash image photo-1624727828489-a1e03b79bba8 loads correctly (Desktop: 472px × 265px, Mobile: 356px × 200px, Tablet: 342px × 192px). ✅ 'Ayuda Urgente por Inundaciones' (Emergencias) - Unsplash image photo-1599700403969-f77b3aa74837 loads correctly (Desktop: 472px × 265px, Mobile: 356px × 200px, Tablet: 342px × 192px). ✅ 'Becas Escolares y Material Didáctico' (Educación) - Unsplash image photo-1577896851231-70ef18881754 loads correctly (Desktop: 472px × 265px, Mobile: 356px × 200px, Tablet: 342px × 192px). ✅ 'Operaciones Quirúrgicas de Rescate Animal' (Mascotas) - Pexels image pexels-photo-15005200 loads correctly (Desktop: 472px × 265px, Mobile: 356px × 200px, Tablet: 342px × 192px). Category filters work correctly: Salud (2 campaigns), Emergencias (1 campaign), Educación (1 campaign), Mascotas (1 campaign). Total 8 campaigns visible (4 seeded + 4 user-created). ROOT CAUSE FIX VERIFIED: The updated verifyAndSeedFirestore() function in mock.js (lines 188-208) now loops through ALL campaigns individually and checks if each exists in Firestore, seeding any missing ones. This makes the seeding logic idempotent and ensures all 4 campaigns are always present. Screenshot evidence: seeded_campaigns_desktop_viewport.png, seeded_campaigns_mobile_viewport.png, seeded_campaigns_tablet_viewport.png. Main agent's fix has been successfully verified - DO NOT FIX AGAIN."
   - agent: "testing"
     message: "✅ COMPREHENSIVE RESPONSIVE TEST COMPLETE (User Request - Desktop 1920x1080): Verified Admin Edit Campaign Modal with custom photo editor section (limit 3 photos) AND 'Docs Verificación' modal with zoom-in hyperlink tags for Cédula and Selfie images. ALL REQUIREMENTS VERIFIED: (1) Admin login successful with DONATEX / Venezuela257# ✓, (2) 'Gestión de Solicitudes' tab is active by default ✓, (3) Found 8 'Editar' buttons in campaigns table ✓, (4) Edit Campaign Modal opens successfully with header 'Editar Campaña (Administrador)' ✓, (5) Modal dimensions: 512px × 588.609375px at position x=704, y=40 ✓, (6) CUSTOM PHOTO EDITOR SECTION renders correctly: Label shows 'FOTOS DE LA CAMPAÑA (3 DE MÁX 3)' ✓, Photo preview grid found (grid-cols-3) with 3 photos displayed ✓, 3 delete buttons (✕) present ✓, Primary photo indicator (★) found ✓, 2 'Set ★' buttons for non-primary photos ✓, 'Añadir Foto' button and URL input hidden when 3 photos present (enforces 3 photos limit) ✓, (7) 'Docs Verificación' button found and clickable ✓, (8) Verification Modal opens successfully with header 'Auditoría de Identidad' ✓, (9) CÉDULA IMAGE WRAPPED IN ZOOM-IN HYPERLINK TAG: <a href='https://donafacil.app/uploads/img-d8f347a3927444c4919aeff004...' target='_blank' rel='noopener noreferrer' class='w-full h-full block cursor-zoom-in' title='Haga clic para ver en tamaño real'> ✓, (10) SELFIE IMAGE WRAPPED IN ZOOM-IN HYPERLINK TAG: <a href='https://donafacil.app/uploads/img-312d5eaf3f734d60bcffa847e8...' target='_blank' rel='noopener noreferrer' class='w-full h-full block cursor-zoom-in' title='Haga clic para ver en tamaño real'> ✓. Both Cédula and Selfie images have valid zoom-in hyperlink tags that allow administrators to expand and view them in full resolution by clicking (opens in new tab). Tested 5 campaigns to find one with verification documents uploaded. Screenshot evidence: admin_edit_modal_opened.png, admin_edit_photo_editor.png, admin_verification_modal.png, verification_docs_with_zoom.png. All responsive test requirements passed successfully."
+  - agent: "testing"
+    message: "✅ NEW ENDPOINTS TESTING COMPLETE (User Request - Port 8001 Redundancy): Tested two new backend endpoints for port 8005 (Nginx PM proxy) redundancy. ALL 17 BACKEND TESTS PASSED (100% success rate). NEW ENDPOINTS VERIFIED: (1) GET /share/campaign/{campaign_id} - Returns HTML response with all required Open Graph meta tags (og:image, og:title, og:description, og:url, og:site_name) and window.location.replace redirect script to /campaigns/{campaign_id}. The og:image correctly points to /api/campaign-image/{campaign_id}.jpg. Tested on localhost:8001 - perfect for WhatsApp and social media rich previews ✓, (2) GET /api/campaign-image/{campaign_id}.jpg - Successfully decodes base64 images and returns binary data with correct content-type, OR redirects (307) to external image URLs (e.g., Unsplash). Fallback mechanism working - redirects to default hearts icon when campaign not found ✓. Both endpoints provide perfect redundancy for port 8005 on production VPS to enable rich social media sharing. Backend is production-ready for WhatsApp/social media integration."
 
